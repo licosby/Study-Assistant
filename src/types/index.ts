@@ -44,6 +44,12 @@ export interface Question {
     };
     description: string;
   };
+  cellDissectionData?: {
+    modelType: 'animal' | 'plant' | 'bacterium' | 'mammalian-heart' | 'flower-angiosperm';
+    title: string;
+    focusOrganelle?: string;
+    specimenType: 'cell' | 'dissection';
+  };
   options: {
     id: string;
     text: string;

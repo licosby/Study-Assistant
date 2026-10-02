@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Timer, 
   Flag, 
@@ -10,10 +10,13 @@ import {
   Play,
   RotateCcw,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Calculator
 } from 'lucide-react';
 import { Question, ExamSession, ExamConfig } from '../types';
 import { ALL_SUBJECTS } from '../data/subjects';
+import { ScientificCalculator } from './ScientificCalculator';
+import { ForeignLanguageAudioPlayer } from './ForeignLanguageAudioPlayer';
 
 interface ExamModeProps {
   allQuestions: Question[];
@@ -29,12 +32,25 @@ export const ExamMode: React.FC<ExamModeProps> = ({
   const [activeSession, setActiveSession] = useState<ExamSession | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [examConfig, setExamConfig] = useState<ExamConfig>({
     mode: 'full',
     totalQuestions: 200,
     timeLimitMinutes: 120, // 2 hours
     selectedSubjectIds: ALL_SUBJECTS.map((s) => s.id),
   });
+
+  // Alt+C keyboard shortcut to toggle calculator
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        setIsCalculatorOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -368,6 +384,31 @@ export const ExamMode: React.FC<ExamModeProps> = ({
   const answeredCount = Object.keys(activeSession.userAnswers).length;
   const isLowTime = activeSession.timeRemainingSeconds < 300;
 
+  // Detect whether current exam question involves mathematical computation
+  const isMathQuestion = useMemo(() => {
+    if (!currentQ) return false;
+    const sId = (currentQ.subjectId || '').toLowerCase();
+    const ch = (currentQ.chapter || '').toLowerCase();
+    const qText = (currentQ.question || '').toLowerCase();
+
+    return (
+      sId.includes('algebra') ||
+      sId.includes('calculus') ||
+      sId.includes('precalculus') ||
+      sId.includes('stat') ||
+      sId.includes('accounting') ||
+      sId.includes('math') ||
+      ch.includes('algebra') ||
+      ch.includes('calculus') ||
+      ch.includes('derivative') ||
+      ch.includes('integral') ||
+      ch.includes('equation') ||
+      ch.includes('statistic') ||
+      /[\d\+\-\*\/=><%^√∫∑π]/.test(currentQ.question) ||
+      /\b(solve|calculate|equation|integral|derivative|limit|matrix|variance|probability)\b/i.test(qText)
+    );
+  }, [currentQ]);
+
   return (
     <div className="max-w-5xl mx-auto space-y-5 animate-fade-in text-[#1B1B19] font-['Inter']">
       {/* Exam Header & Live Countdown Timer */}
@@ -396,6 +437,21 @@ export const ExamMode: React.FC<ExamModeProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Scientific Calculator Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsCalculatorOpen((prev) => !prev)}
+            className={`font-['Space_Mono'] flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-all cursor-pointer ${
+              isCalculatorOpen || isMathQuestion
+                ? 'bg-white border-[#E15B44] text-[#E15B44] font-bold shadow-xs'
+                : 'bg-white border-[#1B1B19] text-[#1B1B19] hover:bg-[#EFECE6]'
+            }`}
+            title="Toggle CLEP Scientific Calculator (Alt+C)"
+          >
+            <Calculator className="w-3.5 h-3.5 text-[#E15B44]" />
+            <span>{isCalculatorOpen ? 'Calc (Open)' : 'Calculator'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => handleToggleFlag(currentQ.id)}
@@ -437,6 +493,35 @@ export const ExamMode: React.FC<ExamModeProps> = ({
             <span>Explain Concept</span>
           </button>
         </div>
+
+        {/* Math Question Helper Notice */}
+        {isMathQuestion && (
+          <div className="mb-4 p-2.5 bg-[#F8F7F4] border border-[#1B1B19]/20 flex items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className="flex items-center gap-2 text-[#1B1B19]">
+              <Calculator className="w-3.5 h-3.5 text-[#E15B44]" />
+              <span className="font-['Space_Mono'] text-[10px] uppercase font-bold tracking-wider">
+                Official CLEP Scientific Calculator Permitted
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCalculatorOpen((prev) => !prev)}
+              className="font-['Space_Mono'] text-[10px] uppercase font-bold text-[#E15B44] hover:underline cursor-pointer"
+            >
+              {isCalculatorOpen ? 'Hide Calculator' : 'Open Calculator (Alt+C)'}
+            </button>
+          </div>
+        )}
+
+        {/* Foreign Language Audio Component */}
+        {currentQ.audioDialogue && (
+          <div className="mb-6">
+            <ForeignLanguageAudioPlayer
+              dialogue={currentQ.audioDialogue}
+              chapter={currentQ.chapter}
+            />
+          </div>
+        )}
 
         <h3 className="text-xl sm:text-2xl font-semibold text-[#1B1B19] leading-snug mb-6 tracking-tight">
           {currentQ.question}
@@ -583,6 +668,12 @@ export const ExamMode: React.FC<ExamModeProps> = ({
           </div>
         </div>
       )}
+
+      {/* Floating Collegiate Scientific Calculator */}
+      <ScientificCalculator
+        isOpen={isCalculatorOpen}
+        onClose={() => setIsCalculatorOpen(false)}
+      />
     </div>
   );
 };

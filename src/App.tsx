@@ -29,6 +29,7 @@ import { MnemonicVault } from './components/MnemonicVault';
 import { MnemonicGeneratorModal } from './components/MnemonicGeneratorModal';
 import { AuthModal } from './components/AuthModal';
 import { AudioListeningLab } from './components/AudioListeningLab';
+import { DigitalCellDissectionLab, SpecimenId } from './components/DigitalCellDissectionLab';
 import { Target, AlertCircle, X } from 'lucide-react';
 
 // Initial preloaded collegiate mnemonics
@@ -121,9 +122,10 @@ const INITIAL_MNEMONICS: MnemonicItem[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'drill' | 'exam' | 'audio' | 'history' | 'notes' | 'mnemonics'>('drill');
+  const [activeTab, setActiveTab] = useState<'drill' | 'exam' | 'sciences' | 'audio' | 'history' | 'notes' | 'mnemonics'>('drill');
   const [user, setUser] = useState<UserSessionData | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [scienceModalSpecimen, setScienceModalSpecimen] = useState<SpecimenId | null>(null);
 
   // Question bank state (persisted + dynamically expandable)
   const [allQuestions, setAllQuestions] = useState<Question[]>(INITIAL_QUESTION_BANK);
@@ -577,6 +579,7 @@ export default function App() {
                     });
                   }
                 }}
+                onOpenScienceLab={(specimenId) => setScienceModalSpecimen(specimenId || 'animal-cell')}
                 isUnlimitedMode={isUnlimitedMode}
                 questionNumber={drillIndex || 1}
                 incorrectCountInHistory={activeQuestion ? (incorrectCountByQuestionId[activeQuestion.id] || 0) : 0}
@@ -609,12 +612,17 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: CLEP Foreign Language Audio Listening Lab */}
+        {/* TAB 3: Digital Cells & Dissection Science Lab */}
+        {activeTab === 'sciences' && (
+          <DigitalCellDissectionLab />
+        )}
+
+        {/* TAB 4: CLEP Foreign Language Audio Listening Lab */}
         {activeTab === 'audio' && (
           <AudioListeningLab />
         )}
 
-        {/* TAB 4: Question History Tracker */}
+        {/* TAB 5: Question History Tracker */}
         {activeTab === 'history' && (
           <HistoryTracker
             history={user?.history || []}
@@ -722,6 +730,35 @@ export default function App() {
           syncUserData(guest);
         }}
       />
+
+      {/* Digital Cells and Dissection Interactive Specimen Modal */}
+      {scienceModalSpecimen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-5xl bg-white border-2 border-[#1B1B19] shadow-2xl max-h-[92vh] overflow-y-auto my-auto">
+            <div className="sticky top-0 z-30 flex items-center justify-between p-3.5 bg-[#F8F7F4] border-b-2 border-[#1B1B19]">
+              <div className="flex items-center gap-2">
+                <span className="font-['Space_Mono'] text-xs uppercase font-bold tracking-wider text-[#1B1B19]">
+                  🔬 Digital Cells & Dissection Specimen Lab
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setScienceModalSpecimen(null)}
+                className="p-1 border border-[#1B1B19] text-[#1B1B19] hover:bg-[#EFECE6] cursor-pointer"
+                title="Close Specimen Lab"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-3 sm:p-6">
+              <DigitalCellDissectionLab
+                initialSpecimenId={scienceModalSpecimen}
+                onExploreComplete={() => setScienceModalSpecimen(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer matching Variation 1 */}
       <footer className="px-4 sm:px-8 py-5 border-t border-[rgba(27,27,25,0.12)] font-['Space_Mono'] text-[10px] sm:text-[11px] uppercase tracking-wider text-[#1B1B19]/60 flex flex-col sm:flex-row items-center justify-between gap-3 mt-auto bg-[#F8F7F4]">
