@@ -1,0 +1,6 @@
+{
+  "name": "CLEP Scholar - Core University Study & Test-Out Engine",
+  "description": "Comprehensive college core and CLEP exam prep app grounded in OpenStax textbooks. Features unlimited practice drills, timed 2-hour mock exams with 80% passing threshold, audio listening comprehension, deep explanations, clip-to-notes, and mnemonic generator across all devices.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

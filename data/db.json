@@ -1,0 +1,18 @@
+{
+  "users": {
+    "testuser": {
+      "username": "testuser",
+      "displayName": "Test Student",
+      "password": "",
+      "history": [],
+      "notes": [],
+      "mnemonics": [],
+      "stats": {
+        "totalAnswered": 0,
+        "totalCorrect": 0,
+        "subjectStats": {}
+      },
+      "lastActive": 1790935360764
+    }
+  }
+}
