@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Volume2, 
-  VolumeX, 
   CheckCircle2, 
   XCircle, 
   ArrowRight, 
@@ -11,12 +9,10 @@ import {
   Hand,
   Target,
   Lightbulb,
-  Sparkles,
-  Eye,
-  EyeOff
+  Sparkles
 } from 'lucide-react';
 import { Question } from '../types';
-import { audioPlayer } from '../utils/audio';
+import { ForeignLanguageAudioPlayer } from './ForeignLanguageAudioPlayer';
 
 interface QuizCardProps {
   question: Question;
@@ -49,37 +45,6 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   incorrectCountInHistory,
   isWeakSpotsMode = false,
 }) => {
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1.0);
-  const [showTranscript, setShowTranscript] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      audioPlayer.stop();
-    };
-  }, [question.id]);
-
-  const handlePlayAudio = () => {
-    if (!question.audioDialogue) return;
-    if (isPlayingAudio) {
-      audioPlayer.stop();
-      setIsPlayingAudio(false);
-    } else {
-      setIsPlayingAudio(true);
-      audioPlayer.play(
-        question.audioDialogue.speakerText,
-        question.audioDialogue.language,
-        () => setIsPlayingAudio(false)
-      );
-    }
-  };
-
-  const handleToggleRate = () => {
-    const nextRate = playbackRate === 1.0 ? 0.75 : 1.0;
-    audioPlayer.setRate(nextRate);
-    setPlaybackRate(nextRate);
-  };
-
   const isCorrect = selectedOptionId === question.correctOptionId;
 
   return (
@@ -111,68 +76,14 @@ export const QuizCard: React.FC<QuizCardProps> = ({
         </div>
       </div>
 
-      {/* Foreign Language Audio Listening Player */}
+      {/* Foreign Language Audio Component */}
       {question.audioDialogue && (
-        <div className="mb-6 p-4 border border-[rgba(27,27,25,0.12)] bg-[#F8F7F4]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-[#1B1B19] font-['Space_Mono'] text-xs uppercase tracking-wider font-bold">
-              <Radio className="w-4 h-4 text-[#E15B44] animate-pulse" />
-              <span>CLEP Listening Comprehension Spoken Dialogue</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleToggleRate}
-                className="font-['Space_Mono'] text-[10px] uppercase px-2 py-0.5 border border-[#1B1B19] bg-white text-[#1B1B19] hover:bg-[#EFECE6] transition-colors"
-                title="Toggle playback speed"
-              >
-                Speed: {playbackRate}x
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowTranscript(!showTranscript)}
-                className="font-['Space_Mono'] text-[10px] uppercase flex items-center gap-1 text-[#1B1B19]/70 hover:text-[#1B1B19] transition-colors"
-              >
-                {showTranscript ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3 text-[#E15B44]" />}
-                <span>{showTranscript ? 'Hide Script' : 'Show Script'}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handlePlayAudio}
-              className={`font-['Space_Mono'] text-xs uppercase tracking-wider px-4 py-2 border border-[#1B1B19] flex items-center gap-2 transition-all cursor-pointer ${
-                isPlayingAudio
-                  ? 'bg-[#E15B44] text-white border-[#E15B44]'
-                  : 'bg-[#1B1B19] text-white hover:bg-[#E15B44] hover:border-[#E15B44]'
-              }`}
-            >
-              {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              <span>{isPlayingAudio ? 'Stop Dialogue' : 'Play Spoken Dialogue'}</span>
-            </button>
-            <span className="text-xs text-[#1B1B19]/60 italic">
-              {isPlayingAudio ? 'Speaking native dialogue...' : 'Accredited native speaker acoustic evaluation'}
-            </span>
-          </div>
-
-          {/* Transcript Drawer */}
-          {showTranscript && (
-            <div className="mt-3 pt-3 border-t border-[rgba(27,27,25,0.12)] text-xs text-[#1B1B19] space-y-1 bg-white p-3 border border-[rgba(27,27,25,0.08)]">
-              <div className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19]/60 font-bold">
-                Spoken Transcript:
-              </div>
-              <p className="italic text-[#1B1B19]">
-                "{question.audioDialogue.speakerText}"
-              </p>
-              {question.audioDialogue.englishTranslation && (
-                <p className="text-[#1B1B19]/70 text-xs">
-                  Translation: {question.audioDialogue.englishTranslation}
-                </p>
-              )}
-            </div>
-          )}
+        <div className="mb-6">
+          <ForeignLanguageAudioPlayer
+            dialogue={question.audioDialogue}
+            subjectName={subjectName}
+            chapter={question.chapter}
+          />
         </div>
       )}
 

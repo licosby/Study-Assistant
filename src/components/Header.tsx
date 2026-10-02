@@ -13,8 +13,8 @@ import {
 import { UserSessionData } from '../services/api';
 
 interface HeaderProps {
-  activeTab: 'drill' | 'exam' | 'history' | 'notes' | 'mnemonics';
-  setActiveTab: (tab: 'drill' | 'exam' | 'history' | 'notes' | 'mnemonics') => void;
+  activeTab: 'drill' | 'exam' | 'audio' | 'history' | 'notes' | 'mnemonics';
+  setActiveTab: (tab: 'drill' | 'exam' | 'audio' | 'history' | 'notes' | 'mnemonics') => void;
   user: UserSessionData | null;
   onOpenAuth: () => void;
 }
@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
           <nav className="hidden md:flex items-center gap-2">
             <button
               onClick={() => setActiveTab('drill')}
-              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3 py-2 border transition-all ${
                 activeTab === 'drill'
                   ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
                   : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
@@ -58,17 +58,27 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('exam')}
-              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3 py-2 border transition-all ${
                 activeTab === 'exam'
                   ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
                   : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
               }`}
             >
-              Mock Exam (80% Benchmark)
+              Mock Exam
+            </button>
+            <button
+              onClick={() => setActiveTab('audio')}
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3 py-2 border transition-all ${
+                activeTab === 'audio'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
+              }`}
+            >
+              Audio Lab
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3 py-2 border transition-all ${
                 activeTab === 'history'
                   ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
                   : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
@@ -78,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3 py-2 border transition-all ${
                 activeTab === 'notes'
                   ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
                   : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
@@ -88,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('mnemonics')}
-              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3 py-2 border transition-all ${
                 activeTab === 'mnemonics'
                   ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
                   : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
@@ -151,6 +161,14 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Timed Exam
+          </button>
+          <button
+            onClick={() => setActiveTab('audio')}
+            className={`px-2.5 py-1 text-[11px] font-['Space_Mono'] uppercase border whitespace-nowrap ${
+              activeTab === 'audio' ? 'bg-[#1B1B19] text-white border-[#1B1B19]' : 'border-transparent text-[#1B1B19]'
+            }`}
+          >
+            Audio Lab
           </button>
           <button
             onClick={() => setActiveTab('history')}

@@ -28,6 +28,7 @@ import { NotebookView } from './components/NotebookView';
 import { MnemonicVault } from './components/MnemonicVault';
 import { MnemonicGeneratorModal } from './components/MnemonicGeneratorModal';
 import { AuthModal } from './components/AuthModal';
+import { AudioListeningLab } from './components/AudioListeningLab';
 import { Target, AlertCircle, X } from 'lucide-react';
 
 // Initial preloaded collegiate mnemonics
@@ -120,7 +121,7 @@ const INITIAL_MNEMONICS: MnemonicItem[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'drill' | 'exam' | 'history' | 'notes' | 'mnemonics'>('drill');
+  const [activeTab, setActiveTab] = useState<'drill' | 'exam' | 'audio' | 'history' | 'notes' | 'mnemonics'>('drill');
   const [user, setUser] = useState<UserSessionData | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -608,7 +609,12 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: Question History Tracker */}
+        {/* TAB 3: CLEP Foreign Language Audio Listening Lab */}
+        {activeTab === 'audio' && (
+          <AudioListeningLab />
+        )}
+
+        {/* TAB 4: Question History Tracker */}
         {activeTab === 'history' && (
           <HistoryTracker
             history={user?.history || []}
