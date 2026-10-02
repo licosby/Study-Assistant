@@ -6,11 +6,10 @@ import {
   Search, 
   Trash2, 
   BookOpen, 
-  Filter,
-  BarChart3,
-  Calendar,
-  AlertTriangle,
-  Award
+  BarChart3, 
+  Calendar, 
+  AlertTriangle, 
+  Award 
 } from 'lucide-react';
 import { HistoryItem, Question } from '../types';
 import { ALL_SUBJECTS } from '../data/subjects';
@@ -35,7 +34,6 @@ export const HistoryTracker: React.FC<HistoryTrackerProps> = ({
   const totalAnswered = history.length;
   const totalCorrect = history.filter((h) => h.isCorrect).length;
   const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  // User requested: "The 'likely passing' note is my estimate, set at 80% correct."
   const isLikelyPassing = accuracy >= 80;
 
   const filteredHistory = history.filter((item) => {
@@ -56,26 +54,26 @@ export const HistoryTracker: React.FC<HistoryTrackerProps> = ({
   });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in text-[#1B1B19] font-['Inter']">
       {/* Top Overview & 80% Benchmark Metrics Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+      <div className="bg-white border border-[rgba(27,27,25,0.15)] p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[rgba(27,27,25,0.1)]">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <History className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-xl font-bold text-white">
-                Comprehensive Question History Tracker
-              </h2>
+            <div className="font-['Space_Mono'] text-[10px] uppercase tracking-[0.15em] text-[#E15B44] font-bold">
+              Archived Telemetry
             </div>
-            <p className="text-xs text-slate-400">
-              Synchronized log of all answered questions with pass/fail tracking and full explanations.
+            <h2 className="font-['Space_Mono'] text-lg sm:text-xl font-bold uppercase tracking-tight text-[#1B1B19]">
+              Comprehensive Question History Tracker
+            </h2>
+            <p className="text-xs text-[#1B1B19]/70 mt-0.5">
+              Verified record of all answered questions with pass/fail benchmarks and textbook explanations.
             </p>
           </div>
 
           {totalAnswered > 0 && (
             <button
               onClick={onClearHistory}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-colors self-start sm:self-auto"
+              className="font-['Space_Mono'] flex items-center gap-1.5 px-3 py-1.5 text-xs uppercase tracking-wider text-[#E15B44] bg-white hover:bg-rose-50 border border-[#E15B44]/40 transition-colors self-start sm:self-auto cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Clear History</span>
@@ -85,103 +83,103 @@ export const HistoryTracker: React.FC<HistoryTrackerProps> = ({
 
         {/* Aggregate Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between">
+          <div className="p-4 border border-[rgba(27,27,25,0.12)] bg-[#F8F7F4] flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              <span className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19]/60 font-bold block">
                 Total Attempts
               </span>
-              <span className="text-2xl font-black text-white">{totalAnswered}</span>
+              <span className="font-['Space_Mono'] text-2xl font-bold text-[#1B1B19]">{totalAnswered}</span>
             </div>
-            <BarChart3 className="w-8 h-8 text-indigo-400/40" />
+            <BarChart3 className="w-8 h-8 text-[#1B1B19]/20" />
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between">
+          <div className="p-4 border border-[rgba(27,27,25,0.12)] bg-[#F8F7F4] flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              <span className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19]/60 font-bold block">
                 Cumulative Accuracy
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-white">{accuracy}%</span>
-                <span className="text-xs text-slate-400">({totalCorrect}/{totalAnswered})</span>
+                <span className="font-['Space_Mono'] text-2xl font-bold text-[#1B1B19]">{accuracy}%</span>
+                <span className="font-['Space_Mono'] text-xs text-[#1B1B19]/60">({totalCorrect}/{totalAnswered})</span>
               </div>
             </div>
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isLikelyPassing ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-              80%
+            <div className={`font-['Space_Mono'] px-2 py-1 text-xs font-bold border ${isLikelyPassing ? 'border-emerald-700 bg-emerald-100 text-emerald-900' : 'border-[#E15B44] bg-rose-50 text-[#E15B44]'}`}>
+              {isLikelyPassing ? '≥80%' : '<80%'}
             </div>
           </div>
 
           {/* 80% Passing Indicator Card */}
           <div
-            className={`p-4 rounded-xl border flex items-center justify-between ${
+            className={`p-4 border flex items-center justify-between ${
               isLikelyPassing
-                ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-                : 'bg-amber-950/30 border-amber-500/40 text-amber-300'
+                ? 'bg-emerald-50 border-emerald-700 text-emerald-950'
+                : 'bg-rose-50 border-[#E15B44] text-[#1B1B19]'
             }`}
           >
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider block mb-0.5">
+              <span className="font-['Space_Mono'] text-[10px] uppercase tracking-wider block mb-0.5 font-bold">
                 Credit Readiness
               </span>
-              <span className="text-sm font-bold block">
+              <span className="font-['Space_Mono'] text-xs sm:text-sm font-bold block uppercase">
                 {isLikelyPassing ? 'Likely Passing (≥80%)' : 'Needs Review (<80%)'}
               </span>
               <span className="text-[11px] opacity-80">
-                {isLikelyPassing ? 'Exceeds test-out benchmark' : 'Target 80% to earn CLEP credit'}
+                {isLikelyPassing ? 'Exceeds test-out standard' : 'Target 80% to earn CLEP credit'}
               </span>
             </div>
             {isLikelyPassing ? (
-              <Award className="w-8 h-8 text-emerald-400 shrink-0" />
+              <Award className="w-8 h-8 text-emerald-700 shrink-0" />
             ) : (
-              <AlertTriangle className="w-8 h-8 text-amber-400 shrink-0" />
+              <AlertTriangle className="w-8 h-8 text-[#E15B44] shrink-0" />
             )}
           </div>
         </div>
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="bg-white border border-[rgba(27,27,25,0.15)] p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#1B1B19]/40 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search past questions or chapters..."
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-3 py-1.5 border border-[rgba(27,27,25,0.2)] bg-[#F8F7F4] text-xs text-[#1B1B19] placeholder-[#1B1B19]/40 focus:outline-none focus:border-[#1B1B19] focus:bg-white font-['Inter']"
           />
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Controls */}
         <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
           {/* Status Filter */}
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <div className="flex items-center gap-1 bg-[#F8F7F4] p-1 border border-[rgba(27,27,25,0.15)] font-['Space_Mono'] text-[10px] uppercase">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1 border transition-all ${
                 filterStatus === 'all'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-transparent hover:border-[rgba(27,27,25,0.2)]'
               }`}
             >
               All ({history.length})
             </button>
             <button
               onClick={() => setFilterStatus('correct')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1 border transition-all ${
                 filterStatus === 'correct'
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-700 text-white border-emerald-700'
+                  : 'bg-transparent text-[#1B1B19] border-transparent hover:border-[rgba(27,27,25,0.2)]'
               }`}
             >
               Correct ({totalCorrect})
             </button>
             <button
               onClick={() => setFilterStatus('incorrect')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1 border transition-all ${
                 filterStatus === 'incorrect'
-                  ? 'bg-rose-600 text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#E15B44] text-white border-[#E15B44]'
+                  : 'bg-transparent text-[#1B1B19] border-transparent hover:border-[rgba(27,27,25,0.2)]'
               }`}
             >
               Missed ({totalAnswered - totalCorrect})
@@ -192,7 +190,7 @@ export const HistoryTracker: React.FC<HistoryTrackerProps> = ({
           <select
             value={selectedSubjectId}
             onChange={(e) => setSelectedSubjectId(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
+            className="px-3 py-1.5 border border-[rgba(27,27,25,0.2)] bg-[#F8F7F4] text-xs font-['Space_Mono'] uppercase text-[#1B1B19] focus:outline-none focus:border-[#1B1B19]"
           >
             <option value="all">All Subjects</option>
             {ALL_SUBJECTS.map((sub) => (
@@ -207,11 +205,11 @@ export const HistoryTracker: React.FC<HistoryTrackerProps> = ({
       {/* History Items List */}
       <div className="space-y-3">
         {filteredHistory.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
-            <History className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-            <h4 className="text-base font-bold text-white mb-1">No Practice History Recorded</h4>
+          <div className="bg-white border border-[rgba(27,27,25,0.15)] p-12 text-center text-[#1B1B19]/60">
+            <History className="w-10 h-10 mx-auto text-[#1B1B19]/30 mb-3" />
+            <h4 className="font-['Space_Mono'] text-sm font-bold uppercase text-[#1B1B19] mb-1">No Practice History Recorded</h4>
             <p className="text-xs max-w-sm mx-auto">
-              Start answering questions in Chapter Drill or CLEP Mock Exam mode. Every response will be logged here with verified explanations.
+              Start answering questions in Chapter Drill or CLEP Mock Exam mode. Every attempt will be recorded here with textbook citations.
             </p>
           </div>
         ) : (
@@ -222,86 +220,70 @@ export const HistoryTracker: React.FC<HistoryTrackerProps> = ({
             return (
               <div
                 key={item.id}
-                className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                  item.isCorrect
-                    ? 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
-                    : 'bg-rose-950/20 border-rose-500/30 hover:border-rose-500/50'
-                }`}
+                className="bg-white border border-[rgba(27,27,25,0.15)] hover:border-[#1B1B19] p-4 sm:p-5 transition-all shadow-2xs"
               >
-                {/* Meta Header */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
-                        item.isCorrect
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                      }`}
-                    >
-                      {item.isCorrect ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Correct
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-3.5 h-3.5" /> Incorrect
-                        </>
-                      )}
+                    <span className={`font-['Space_Mono'] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
+                      item.isCorrect
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : 'bg-rose-50 text-[#E15B44] border-rose-300'
+                    }`}>
+                      {item.isCorrect ? '✓ Correct' : '✕ Missed'}
                     </span>
-                    <span className="text-xs font-semibold text-slate-300">
-                      {subject ? subject.name : item.subjectId}
+                    <span className="font-['Space_Mono'] text-[10px] uppercase font-bold text-[#E15B44]">
+                      {subject?.name || 'College Core'}
                     </span>
-                    <span className="text-slate-600">•</span>
-                    <span className="text-xs text-slate-400">{item.chapter}</span>
+                    <span className="text-[#1B1B19]/30 font-['Space_Mono']">/</span>
+                    <span className="font-['Space_Mono'] text-[10px] uppercase text-[#1B1B19]/60">{item.chapter}</span>
+                    <span className="font-['Space_Mono'] text-[9px] uppercase px-1.5 py-0.2 bg-[#F8F7F4] border border-[rgba(27,27,25,0.15)] text-[#1B1B19]/70">
+                      {item.mode === 'exam' ? 'Mock Exam' : 'Chapter Drill'}
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(item.timestamp).toLocaleDateString()} {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-
-                    {/* Explain That Feature Next to Each Question in History */}
-                    {originalQ && (
-                      <button
-                        onClick={() => onOpenExplainForQuestion(originalQ)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 transition-colors"
-                      >
-                        <BookOpen className="w-3 h-3" />
-                        <span>Explain That</span>
-                      </button>
-                    )}
+                  <div className="font-['Space_Mono'] text-[10px] text-[#1B1B19]/50 flex items-center gap-1 shrink-0">
+                    <Calendar className="w-3 h-3" />
+                    <span>{new Date(item.timestamp).toLocaleDateString()}</span>
                   </div>
                 </div>
 
-                {/* Question */}
-                <p className="text-xs sm:text-sm font-semibold text-white mb-3">
+                <h4 className="text-sm sm:text-base font-semibold text-[#1B1B19] mb-3 leading-snug">
                   {item.questionText}
-                </p>
+                </h4>
 
-                {/* Answer Comparison */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                      Your Answer:
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                  <div className={`p-2.5 border ${item.isCorrect ? 'border-emerald-700 bg-emerald-50/50' : 'border-[#E15B44] bg-rose-50/50'}`}>
+                    <span className="font-['Space_Mono'] text-[9px] uppercase tracking-wider text-[#1B1B19]/60 font-bold block mb-0.5">
+                      Your Response:
                     </span>
-                    <span className={item.isCorrect ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
-                      {item.selectedOptionId.toUpperCase()}: {item.selectedOptionText}
-                    </span>
+                    <span className="font-medium text-[#1B1B19]">{item.selectedOptionText}</span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
-                    <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
-                      Correct Verified Answer:
-                    </span>
-                    <span className="text-emerald-300 font-medium">
-                      {item.correctOptionId.toUpperCase()}: {item.correctOptionText}
-                    </span>
-                  </div>
+                  {!item.isCorrect && (
+                    <div className="p-2.5 border border-emerald-700 bg-emerald-50/50">
+                      <span className="font-['Space_Mono'] text-[9px] uppercase tracking-wider text-emerald-900 font-bold block mb-0.5">
+                        Verified Correct Answer:
+                      </span>
+                      <span className="font-medium text-emerald-950">{item.correctOptionText}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-2 mt-2 text-[11px] text-slate-500 font-mono">
-                  Reference: {item.textbookRef}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[rgba(27,27,25,0.08)]">
+                  <span className="font-['Space_Mono'] text-[10px] uppercase text-[#1B1B19]/60">
+                    Source: <span className="font-bold text-[#1B1B19]">{item.textbookRef}</span>
+                  </span>
+
+                  {originalQ && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenExplainForQuestion(originalQ)}
+                      className="font-['Space_Mono'] self-start sm:self-auto flex items-center gap-1.5 px-3 py-1 border border-[#1B1B19] bg-white hover:bg-[#EFECE6] text-xs uppercase tracking-wider font-semibold text-[#1B1B19] transition-colors cursor-pointer"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Review Concept Breakdown</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

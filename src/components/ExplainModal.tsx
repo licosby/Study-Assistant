@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { 
   X, 
   BookOpen, 
-  Bookmark, 
-  Lightbulb, 
-  Sparkles, 
   CheckCircle2, 
   XCircle, 
+  Sparkles, 
+  Bookmark, 
+  Lightbulb, 
   Copy, 
+  Check, 
   ExternalLink,
-  BrainCircuit,
-  BookmarkCheck
+  BrainCircuit
 } from 'lucide-react';
 import { Question, StudyNote, MnemonicItem } from '../types';
 import { generateAIMnemonic } from '../services/api';
@@ -24,6 +24,7 @@ interface ExplainModalProps {
   onSaveMnemonic: (mnemonic: Omit<MnemonicItem, 'id' | 'createdAt'>) => void;
   isNoteAlreadyClipped?: boolean;
   isMnemonicAlreadySaved?: boolean;
+  onOpenMnemonicStudio?: (concept: string) => void;
 }
 
 export const ExplainModal: React.FC<ExplainModalProps> = ({
@@ -35,6 +36,7 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
   onSaveMnemonic,
   isNoteAlreadyClipped = false,
   isMnemonicAlreadySaved = false,
+  onOpenMnemonicStudio,
 }) => {
   const [clipped, setClipped] = useState(isNoteAlreadyClipped);
   const [mnemonicSaved, setMnemonicSaved] = useState(isMnemonicAlreadySaved);
@@ -44,6 +46,7 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
     explanation: string;
   } | null>(null);
   const [loadingMnemonic, setLoadingMnemonic] = useState(false);
+  const [copiedCitation, setCopiedCitation] = useState(false);
 
   if (!isOpen || !question) return null;
 
@@ -51,13 +54,19 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
     onClipToNotes({
       subjectId: question.subjectId,
       chapter: question.chapter,
-      title: question.explanation.coreConcept.slice(0, 80) + '...',
-      summary: `${question.explanation.coreConcept}\n\nKey Takeaway: ${question.explanation.keyTakeaway}`,
+      title: `Concept: ${question.question.slice(0, 50)}...`,
+      summary: question.explanation.coreConcept,
       keyTakeaway: question.explanation.keyTakeaway,
       textbookRef: question.textbookRef,
     });
     setClipped(true);
     setTimeout(() => setClipped(false), 3000);
+  };
+
+  const handleCopyCitation = () => {
+    navigator.clipboard.writeText(question.textbookRef);
+    setCopiedCitation(true);
+    setTimeout(() => setCopiedCitation(false), 2000);
   };
 
   const handleGenerateMnemonic = async () => {
@@ -97,88 +106,89 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full p-5 sm:p-6 text-white shadow-2xl relative max-h-[90vh] flex flex-col my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-xs animate-fade-in overflow-y-auto">
+      <div className="bg-white border-2 border-[#1B1B19] max-w-2xl w-full p-6 sm:p-8 text-[#1B1B19] shadow-2xl relative max-h-[92vh] flex flex-col my-auto">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-800 gap-3">
+        <div className="flex items-start justify-between pb-4 border-b border-[#1B1B19] gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                Textbook Mini-Lesson
+              <span className="font-['Space_Mono'] text-[10px] uppercase tracking-[0.15em] text-[#E15B44] font-bold">
+                Textbook Mini-Lesson · {subjectName}
               </span>
-              <span className="text-xs text-slate-400 truncate max-w-xs">{question.chapter}</span>
+              <span className="text-[#1B1B19]/40 font-['Space_Mono'] text-xs">/</span>
+              <span className="font-['Space_Mono'] text-[10px] uppercase text-[#1B1B19]/60 truncate max-w-xs">{question.chapter}</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
-              In-Depth Concept Breakdown & Proof
+            <h3 className="font-['Space_Mono'] text-base sm:text-xl font-bold uppercase tracking-tight text-[#1B1B19] leading-tight">
+              Concept Breakdown & Academic Proof
             </h3>
-            <p className="text-xs text-amber-400 font-mono mt-0.5">
-              Verified Source: {question.textbookRef}
+            <p className="font-['Space_Mono'] text-xs text-[#1B1B19]/70 mt-0.5">
+              Verified Source: <span className="font-bold text-[#1B1B19]">{question.textbookRef}</span>
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+            className="p-1.5 border border-[#1B1B19] text-[#1B1B19] hover:bg-[#EFECE6] transition-colors shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto pr-1 py-4 space-y-4 flex-1 scrollbar-thin text-xs sm:text-sm">
+        <div className="overflow-y-auto pr-1 py-4 space-y-4 flex-1 scrollbar-thin text-xs sm:text-sm font-['Inter']">
           {/* Question Recap Box */}
-          <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+          <div className="p-4 border border-[rgba(27,27,25,0.15)] bg-[#F8F7F4]">
+            <span className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19]/60 font-bold block mb-1">
               Question Under Review:
             </span>
-            <p className="text-slate-200 font-medium">{question.question}</p>
+            <p className="text-[#1B1B19] font-medium leading-relaxed">{question.question}</p>
           </div>
 
           {/* Core Concept Mini Lesson */}
-          <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-500/30">
-            <div className="flex items-center gap-2 text-indigo-300 font-bold mb-2">
-              <BookOpen className="w-4 h-4" />
+          <div className="p-4 border border-[rgba(27,27,25,0.15)] bg-white">
+            <div className="flex items-center gap-2 font-['Space_Mono'] text-xs uppercase tracking-wider text-[#1B1B19] font-bold mb-2">
+              <BookOpen className="w-4 h-4 text-[#E15B44]" />
               <span>Core Academic Principle</span>
             </div>
-            <p className="text-slate-200 leading-relaxed">
+            <p className="text-[#1B1B19]/90 leading-relaxed text-sm">
               {question.explanation.coreConcept}
             </p>
           </div>
 
           {/* Textbook Excerpt */}
-          <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60 border-l-4 border-l-amber-500">
-            <span className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider block mb-1">
-              Textbook Grounding Excerpt:
+          <div className="p-4 border-l-4 border-l-[#E15B44] border border-[rgba(27,27,25,0.12)] bg-[#F8F7F4]">
+            <span className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#E15B44] font-bold block mb-1">
+              OpenStax Textbook Grounding Excerpt:
             </span>
-            <p className="text-slate-300 italic text-xs leading-relaxed">
+            <p className="italic text-xs sm:text-sm text-[#1B1B19]/80 leading-relaxed">
               "{question.explanation.textbookExcerpt}"
             </p>
           </div>
 
           {/* Why Correct Rationale */}
-          <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
-            <div className="flex items-center gap-2 text-emerald-300 font-bold mb-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Step-by-Step Proof: Why the Correct Answer is True</span>
+          <div className="p-4 border border-emerald-700 bg-emerald-50 text-emerald-950">
+            <div className="flex items-center gap-2 font-['Space_Mono'] text-xs uppercase tracking-wider text-emerald-900 font-bold mb-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+              <span>Step-by-Step Proof: Why the Correct Option Holds</span>
             </div>
-            <p className="text-slate-200 leading-relaxed">
+            <p className="text-emerald-950/90 leading-relaxed text-sm">
               {question.explanation.whyCorrect}
             </p>
           </div>
 
           {/* Distractor Breakdown */}
           {question.explanation.distractorBreakdown && (
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div className="flex items-center gap-2 text-slate-300 font-bold mb-2">
-                <XCircle className="w-4 h-4 text-rose-400" />
-                <span>Distractor Analysis (Why the other choices are incorrect)</span>
+            <div className="p-4 border border-[rgba(27,27,25,0.15)] bg-white">
+              <div className="flex items-center gap-2 font-['Space_Mono'] text-xs uppercase tracking-wider text-[#1B1B19] font-bold mb-3">
+                <XCircle className="w-4 h-4 text-[#E15B44]" />
+                <span>Distractor Analysis (Flaws in alternate choices)</span>
               </div>
-              <div className="space-y-2 mt-2">
+              <div className="space-y-2">
                 {Object.entries(question.explanation.distractorBreakdown).map(([optId, reason]) => (
-                  <div key={optId} className="flex items-start gap-2 text-xs">
-                    <span className="font-bold uppercase text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 shrink-0">
+                  <div key={optId} className="flex items-start gap-2.5 p-2 bg-[#F8F7F4] border border-[rgba(27,27,25,0.08)]">
+                    <span className="font-['Space_Mono'] text-xs font-bold uppercase text-[#E15B44] border border-[#E15B44]/40 px-1.5 py-0.2 shrink-0">
                       Option {optId}
                     </span>
-                    <span className="text-slate-300">{reason}</span>
+                    <span className="text-[#1B1B19]/80 text-xs leading-relaxed">{reason}</span>
                   </div>
                 ))}
               </div>
@@ -186,103 +196,121 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
           )}
 
           {/* High Yield Key Takeaway */}
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-amber-300 text-xs block">High-Yield CLEP Takeaway:</span>
-              <p className="text-slate-200 text-xs mt-0.5">{question.explanation.keyTakeaway}</p>
+          <div className="p-4 border border-[#1B1B19] bg-[#EFECE6] text-[#1B1B19]">
+            <div className="flex items-center gap-2 font-['Space_Mono'] text-xs uppercase tracking-wider font-bold mb-1 text-[#1B1B19]">
+              <Sparkles className="w-4 h-4 text-[#E15B44]" />
+              <span>High-Yield CLEP Benchmark Takeaway</span>
             </div>
+            <p className="text-xs sm:text-sm text-[#1B1B19]/90 leading-relaxed font-medium">
+              {question.explanation.keyTakeaway}
+            </p>
           </div>
 
           {/* Mnemonic Hook Section */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/40">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2 text-indigo-300 font-bold">
-                <BrainCircuit className="w-4 h-4 text-indigo-400" />
+          <div className="p-5 border-2 border-[#1B1B19] bg-white">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2 font-['Space_Mono'] text-xs uppercase tracking-wider font-bold text-[#1B1B19]">
+                <BrainCircuit className="w-4 h-4 text-[#E15B44]" />
                 <span>Collegiate Memory Mnemonic</span>
               </div>
               <button
+                type="button"
                 onClick={handleGenerateMnemonic}
                 disabled={loadingMnemonic}
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 hover:underline disabled:opacity-50"
+                className="font-['Space_Mono'] text-[10px] uppercase tracking-wider px-2 py-1 border border-[#1B1B19] bg-[#F8F7F4] hover:bg-[#EFECE6] transition-colors cursor-pointer disabled:opacity-50"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{loadingMnemonic ? 'Generating...' : 'Regenerate Mnemonic'}</span>
+                {loadingMnemonic ? 'Generating...' : 'Regenerate'}
               </button>
             </div>
 
             {activeMnemonic ? (
               <div>
-                <div className="bg-indigo-950/60 border border-indigo-500/30 rounded-lg p-3 text-center mb-2">
-                  <span className="text-sm font-extrabold tracking-wide text-amber-300">
+                <div className="border border-[#1B1B19] bg-[#1B1B19] text-white p-3 text-center mb-3">
+                  <span className="font-['Space_Mono'] text-sm sm:text-base font-bold tracking-wide text-amber-300">
                     "{activeMnemonic.phrase}"
                   </span>
                 </div>
                 {breakdownList.length > 0 && (
-                  <ul className="text-xs text-slate-300 space-y-1 mb-2 list-disc list-inside">
+                  <ul className="text-xs text-[#1B1B19] space-y-1 mb-3 font-['Space_Mono']">
                     {breakdownList.map((line: string, i: number) => (
-                      <li key={i}>{line}</li>
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-[#E15B44] font-bold">↳</span>
+                        <span>{line}</span>
+                      </li>
                     ))}
                   </ul>
                 )}
-                <p className="text-[11px] text-slate-400 italic">
-                  Tip: {activeMnemonic.explanation}
+                <p className="text-[11px] text-[#1B1B19]/70 italic mb-3">
+                  Memory Trigger: {activeMnemonic.explanation}
                 </p>
 
-                <div className="pt-2">
+                <div className="pt-2 flex items-center gap-2 flex-wrap border-t border-[rgba(27,27,25,0.1)]">
                   <button
+                    type="button"
                     onClick={handleSaveMnemonic}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`font-['Space_Mono'] text-xs uppercase tracking-wider px-3.5 py-1.5 border transition-all cursor-pointer ${
                       mnemonicSaved
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40'
+                        ? 'bg-emerald-700 text-white border-emerald-700 font-bold'
+                        : 'bg-[#1B1B19] text-white border-[#1B1B19] hover:bg-[#E15B44]'
                     }`}
                   >
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    <span>{mnemonicSaved ? '✓ Saved to Mnemonic Vault' : 'Save Mnemonic to Vault'}</span>
+                    {mnemonicSaved ? '✓ Saved to Vault' : 'Save to Vault'}
                   </button>
+
+                  {onOpenMnemonicStudio && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenMnemonicStudio(question.explanation.coreConcept)}
+                      className="font-['Space_Mono'] text-xs uppercase tracking-wider px-3.5 py-1.5 border border-[#1B1B19] bg-white hover:bg-[#EFECE6] text-[#1B1B19] transition-all cursor-pointer"
+                    >
+                      Mnemonic Studio (Acronyms/Rhymes)
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400">
-                Click regenerate to build a custom mnemonic memory aid for this concept.
+              <p className="text-xs text-[#1B1B19]/60">
+                Click regenerate to construct an associative mnemonic aid for this concept.
               </p>
             )}
           </div>
         </div>
 
         {/* Modal Action Footer */}
-        <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-[11px] text-slate-400">
-            Grounded in university curriculum standards
+        <div className="pt-4 border-t border-[#1B1B19] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="font-['Space_Mono'] text-[10px] uppercase text-[#1B1B19]/60">
+            OpenStax College Core Framework
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {/* Clip to Notes Button */}
             <button
+              type="button"
               onClick={handleClip}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-all ${
+              className={`font-['Space_Mono'] flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 border text-xs uppercase tracking-wider transition-all cursor-pointer ${
                 clipped
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20'
+                  ? 'bg-emerald-700 text-white border-emerald-700 font-bold'
+                  : 'bg-[#1B1B19] text-white border-[#1B1B19] hover:bg-[#E15B44]'
               }`}
             >
-              {clipped ? (
-                <>
-                  <BookmarkCheck className="w-4 h-4" />
-                  <span>Clipped to Notebook!</span>
-                </>
-              ) : (
-                <>
-                  <Bookmark className="w-4 h-4" />
-                  <span>Clip to Notes</span>
-                </>
-              )}
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>{clipped ? '✓ Clipped' : 'Clip to Notebook'}</span>
+            </button>
+
+            {/* Citation Copy Button */}
+            <button
+              type="button"
+              onClick={handleCopyCitation}
+              className="font-['Space_Mono'] flex items-center gap-1.5 px-3 py-2 border border-[#1B1B19] bg-white hover:bg-[#EFECE6] text-[#1B1B19] text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              {copiedCitation ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedCitation ? 'Copied' : 'Cite'}</span>
             </button>
 
             <button
+              type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors"
+              className="font-['Space_Mono'] px-4 py-2 border border-[rgba(27,27,25,0.2)] bg-transparent hover:bg-[#EFECE6] text-[#1B1B19] text-xs uppercase tracking-wider transition-colors cursor-pointer"
             >
               Close
             </button>

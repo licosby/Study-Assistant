@@ -31,84 +31,69 @@ export const Header: React.FC<HeaderProps> = ({
   const isPassing = accuracy >= 80;
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-md">
+    <header className="bg-[#F8F7F4] border-b-2 border-[#1B1B19] text-[#1B1B19] sticky top-0 z-40 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo & Identity */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('drill')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <GraduationCap className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                  CLEP Scholar
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  OpenStax Core
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                University Core & CLEP Test-Out Mastery Engine
-              </p>
+        <div className="flex items-center justify-between h-20">
+          {/* Logo & Identity matching Variation 1 */}
+          <div className="cursor-pointer" onClick={() => setActiveTab('drill')}>
+            <h1 className="font-['Space_Mono'] text-xl sm:text-2xl font-bold tracking-[-0.04em] text-[#1B1B19] uppercase m-0 leading-none">
+              CLEP SCHOLAR
+            </h1>
+            <div className="font-['Space_Mono'] text-[10px] sm:text-[11px] uppercase tracking-[0.15em] text-[#1B1B19]/60 font-medium mt-1">
+              v 1.2.0 — University Core Study Engine
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-800/60 p-1 rounded-xl border border-slate-700/50">
+          {/* Navigation Tabs - Editorial Monospace Buttons */}
+          <nav className="hidden md:flex items-center gap-2">
             <button
               onClick={() => setActiveTab('drill')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
                 activeTab === 'drill'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
               Study & Drill
             </button>
             <button
               onClick={() => setActiveTab('exam')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
                 activeTab === 'exam'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
               }`}
             >
-              <Timer className="w-3.5 h-3.5" />
-              CLEP Mock Exam
+              Mock Exam (80% Benchmark)
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
                 activeTab === 'history'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
               }`}
             >
-              <History className="w-3.5 h-3.5" />
               History ({user?.history?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
                 activeTab === 'notes'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
               }`}
             >
-              <Bookmark className="w-3.5 h-3.5" />
               Notebook ({user?.notes?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('mnemonics')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`font-['Space_Mono'] text-[11px] uppercase tracking-wider px-3.5 py-2 border transition-all ${
                 activeTab === 'mnemonics'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                  : 'bg-transparent text-[#1B1B19] border-[rgba(27,27,25,0.2)] hover:border-[#1B1B19] hover:bg-[#EFECE6]'
               }`}
             >
-              <Lightbulb className="w-3.5 h-3.5" />
               Mnemonics ({user?.mnemonics?.length || 0})
             </button>
           </nav>
@@ -116,17 +101,17 @@ export const Header: React.FC<HeaderProps> = ({
           {/* User Account / Device Sync Status */}
           <div className="flex items-center gap-3">
             {totalAnswered > 0 && (
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs">
-                <span className="text-slate-400">Score:</span>
-                <span className="font-bold text-white">{accuracy}%</span>
-                <span className="text-slate-500">({totalCorrect}/{totalAnswered})</span>
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 border border-[rgba(27,27,25,0.15)] bg-white font-['Space_Mono'] text-xs">
+                <span className="text-[#1B1B19]/60">Score:</span>
+                <span className="font-bold text-[#1B1B19]">{accuracy}%</span>
+                <span className="text-[#1B1B19]/50">({totalCorrect}/{totalAnswered})</span>
                 {isPassing ? (
-                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20" title="Estimate benchmark: 80% passing standard">
-                    <CheckCircle2 className="w-3 h-3" /> Likely Passing (≥80%)
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 border border-emerald-300">
+                    PASSING (≥80%)
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-[11px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20" title="Target: 80% passing estimate">
-                    <AlertTriangle className="w-3 h-3" /> Target: 80%
+                  <span className="text-[10px] font-bold text-[#E15B44] bg-rose-50 px-1.5 py-0.5 border border-rose-300">
+                    TARGET: 80%
                   </span>
                 )}
               </div>
@@ -134,15 +119,15 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onOpenAuth}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 border border-[#1B1B19] bg-white hover:bg-[#EFECE6] font-['Space_Mono'] text-xs transition-colors cursor-pointer"
             >
-              <UserIcon className="w-3.5 h-3.5 text-indigo-400" />
-              <div className="text-left">
-                <div className="text-white font-medium truncate max-w-[100px] sm:max-w-[120px]">
+              <UserIcon className="w-3.5 h-3.5 text-[#E15B44]" />
+              <div className="text-left leading-tight">
+                <div className="text-[#1B1B19] font-bold truncate max-w-[110px]">
                   {user ? user.displayName : 'Sign In'}
                 </div>
-                <div className="text-[10px] text-emerald-400 font-mono">
-                  {user ? '✓ 3 Devices Synced' : 'Switch Device'}
+                <div className="text-[9px] text-emerald-700 tracking-wider">
+                  {user ? '✓ 3 DEVICES SYNCED' : 'SWITCH DEVICE'}
                 </div>
               </div>
             </button>
@@ -150,43 +135,43 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Subnavigation */}
-        <div className="flex md:hidden items-center justify-between py-2 border-t border-slate-800 overflow-x-auto gap-2">
+        <div className="flex md:hidden items-center justify-between py-2 border-t border-[rgba(27,27,25,0.1)] overflow-x-auto gap-2">
           <button
             onClick={() => setActiveTab('drill')}
-            className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap ${
-              activeTab === 'drill' ? 'bg-indigo-600 text-white' : 'text-slate-300'
+            className={`px-2.5 py-1 text-[11px] font-['Space_Mono'] uppercase border whitespace-nowrap ${
+              activeTab === 'drill' ? 'bg-[#1B1B19] text-white border-[#1B1B19]' : 'border-transparent text-[#1B1B19]'
             }`}
           >
             Study & Drill
           </button>
           <button
             onClick={() => setActiveTab('exam')}
-            className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap ${
-              activeTab === 'exam' ? 'bg-indigo-600 text-white' : 'text-slate-300'
+            className={`px-2.5 py-1 text-[11px] font-['Space_Mono'] uppercase border whitespace-nowrap ${
+              activeTab === 'exam' ? 'bg-[#1B1B19] text-white border-[#1B1B19]' : 'border-transparent text-[#1B1B19]'
             }`}
           >
             Timed Exam
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap ${
-              activeTab === 'history' ? 'bg-indigo-600 text-white' : 'text-slate-300'
+            className={`px-2.5 py-1 text-[11px] font-['Space_Mono'] uppercase border whitespace-nowrap ${
+              activeTab === 'history' ? 'bg-[#1B1B19] text-white border-[#1B1B19]' : 'border-transparent text-[#1B1B19]'
             }`}
           >
             History
           </button>
           <button
             onClick={() => setActiveTab('notes')}
-            className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap ${
-              activeTab === 'notes' ? 'bg-indigo-600 text-white' : 'text-slate-300'
+            className={`px-2.5 py-1 text-[11px] font-['Space_Mono'] uppercase border whitespace-nowrap ${
+              activeTab === 'notes' ? 'bg-[#1B1B19] text-white border-[#1B1B19]' : 'border-transparent text-[#1B1B19]'
             }`}
           >
             Notes
           </button>
           <button
             onClick={() => setActiveTab('mnemonics')}
-            className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap ${
-              activeTab === 'mnemonics' ? 'bg-indigo-600 text-white' : 'text-slate-300'
+            className={`px-2.5 py-1 text-[11px] font-['Space_Mono'] uppercase border whitespace-nowrap ${
+              activeTab === 'mnemonics' ? 'bg-[#1B1B19] text-white border-[#1B1B19]' : 'border-transparent text-[#1B1B19]'
             }`}
           >
             Mnemonics

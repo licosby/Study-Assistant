@@ -45,58 +45,58 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-white shadow-2xl relative overflow-hidden">
-        {/* Glow accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-indigo-500 to-emerald-500" />
-
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+      <div className="bg-white border-2 border-[#1B1B19] max-w-md w-full p-6 sm:p-8 text-[#1B1B19] shadow-2xl relative overflow-hidden">
+        <div className="flex items-start justify-between pb-3 mb-4 border-b border-[#1B1B19] gap-3">
           <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
-              Student Profile & 3-Device Sync
+            <div className="font-['Space_Mono'] text-[10px] uppercase tracking-[0.15em] text-[#E15B44] font-bold">
+              Account Architecture
+            </div>
+            <h3 className="font-['Space_Mono'] text-base sm:text-lg font-bold uppercase tracking-tight text-[#1B1B19] flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#E15B44]" />
+              <span>Student Profile & 3-Device Sync</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Sync your study history, scores, and notes seamlessly across devices.
+            <p className="text-xs text-[#1B1B19]/70 mt-0.5 font-['Inter']">
+              Seamlessly persist history, notes, and mnemonics across all 3 registered devices.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 border border-[#1B1B19] text-[#1B1B19] hover:bg-[#EFECE6] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* 3 Devices Visual Pill */}
-        <div className="bg-slate-800/80 border border-indigo-500/20 rounded-xl p-3 mb-5 flex items-center justify-between text-xs text-slate-300">
-          <div className="flex items-center gap-2">
-            <Laptop className="w-4 h-4 text-indigo-400" />
+        {/* 3 Devices Visual Bar */}
+        <div className="bg-[#F8F7F4] border border-[rgba(27,27,25,0.15)] p-3 mb-5 flex items-center justify-between text-xs font-['Space_Mono'] uppercase tracking-wider text-[#1B1B19]">
+          <div className="flex items-center gap-1.5">
+            <Laptop className="w-4 h-4 text-[#1B1B19]" />
             <span>Laptop</span>
           </div>
-          <span className="text-indigo-400 font-bold">⇄</span>
-          <div className="flex items-center gap-2">
-            <Tablet className="w-4 h-4 text-emerald-400" />
+          <span className="text-[#E15B44] font-bold">⇄</span>
+          <div className="flex items-center gap-1.5">
+            <Tablet className="w-4 h-4 text-[#1B1B19]" />
             <span>Tablet</span>
           </div>
-          <span className="text-emerald-400 font-bold">⇄</span>
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-amber-400" />
+          <span className="text-[#E15B44] font-bold">⇄</span>
+          <div className="flex items-center gap-1.5">
+            <Smartphone className="w-4 h-4 text-[#1B1B19]" />
             <span>Phone</span>
           </div>
         </div>
 
         {currentUser && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-emerald-300">
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-600 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-emerald-950">
+              <CheckCircle className="w-4 h-4 text-emerald-700 shrink-0" />
               <span>
-                Currently studying as <strong className="text-white">{currentUser.displayName}</strong> (@{currentUser.username})
+                Active: <strong>{currentUser.displayName}</strong> (@{currentUser.username})
               </span>
             </div>
             <button
               onClick={onLogout}
-              className="text-xs text-rose-400 hover:text-rose-300 hover:underline ml-2"
+              className="font-['Space_Mono'] text-[10px] uppercase text-[#E15B44] hover:underline font-bold ml-2 cursor-pointer"
             >
               Sign Out
             </button>
@@ -104,62 +104,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         )}
 
         {error && (
-          <div className="mb-4 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300">
+          <div className="mb-4 p-3 bg-rose-50 border border-[#E15B44] text-xs text-[#E15B44] font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 font-['Inter']">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              What is your name?
+            <label className="block font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19] font-bold mb-1">
+              Full Name / Academic Callout:
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Jordan Lee"
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              placeholder="e.g. Alex Morgan"
+              className="w-full px-3 py-2 border border-[rgba(27,27,25,0.2)] bg-[#F8F7F4] text-sm text-[#1B1B19] placeholder-[#1B1B19]/40 focus:outline-none focus:border-[#1B1B19] focus:bg-white transition-all font-['Inter']"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Select a Username <span className="text-indigo-400">*</span>
+            <label className="block font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19] font-bold mb-1">
+              Username (Synchronized Identity):
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. jordan_clep2026"
+              placeholder="e.g. scholar_alex"
               required
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full px-3 py-2 border border-[rgba(27,27,25,0.2)] bg-[#F8F7F4] text-sm text-[#1B1B19] placeholder-[#1B1B19]/40 focus:outline-none focus:border-[#1B1B19] focus:bg-white transition-all font-['Inter']"
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              Use this same username on your phone, tablet, and PC to pick up where you left off.
-            </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Password or Device PIN <span className="text-slate-500 font-normal">(simple device lock)</span>
+            <label className="block font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19] font-bold mb-1">
+              Passkey / Pin (Optional for Guest Mode):
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter a password or 4-digit PIN"
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              placeholder="••••••••"
+              className="w-full px-3 py-2 border border-[rgba(27,27,25,0.2)] bg-[#F8F7F4] text-sm text-[#1B1B19] placeholder-[#1B1B19]/40 focus:outline-none focus:border-[#1B1B19] focus:bg-white transition-all font-['Inter']"
             />
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="font-['Space_Mono'] px-4 py-2 border border-[rgba(27,27,25,0.2)] text-xs uppercase tracking-wider hover:bg-[#EFECE6] transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-sm shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+              className="font-['Space_Mono'] px-5 py-2 bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs uppercase tracking-wider font-bold border border-[#1B1B19] transition-all cursor-pointer disabled:opacity-50"
             >
-              {loading ? 'Connecting Device...' : 'Save & Sync Across All 3 Devices'}
+              {loading ? 'Authenticating...' : 'Sign In & Sync'}
             </button>
           </div>
         </form>

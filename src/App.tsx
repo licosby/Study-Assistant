@@ -26,7 +26,9 @@ import { ExamResults } from './components/ExamResults';
 import { HistoryTracker } from './components/HistoryTracker';
 import { NotebookView } from './components/NotebookView';
 import { MnemonicVault } from './components/MnemonicVault';
+import { MnemonicGeneratorModal } from './components/MnemonicGeneratorModal';
 import { AuthModal } from './components/AuthModal';
+import { Target, AlertCircle, X } from 'lucide-react';
 
 // Initial preloaded collegiate mnemonics
 const INITIAL_MNEMONICS: MnemonicItem[] = [
@@ -137,6 +139,61 @@ export default function App() {
   // Explain This Modal State
   const [explainQuestion, setExplainQuestion] = useState<Question | null>(null);
 
+  // Mnemonic Generator Modal State
+  const [mnemonicModalData, setMnemonicModalData] = useState<{
+    concept: string;
+    subjectName: string;
+    subjectId: string;
+    chapter: string;
+  } | null>(null);
+
+  // Weak Spots Mode State
+  const [isWeakSpotsMode, setIsWeakSpotsMode] = useState(false);
+  const [weakSpotsNotice, setWeakSpotsNotice] = useState<string | null>(null);
+
+  // Compute question error frequencies from user history
+  const incorrectCountByQuestionId = React.useMemo(() => {
+    if (!user?.history) return {};
+    const counts: Record<string, number> = {};
+    for (const item of user.history) {
+      if (!item.isCorrect) {
+        counts[item.questionId] = (counts[item.questionId] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [user?.history]);
+
+  // Questions where the user answered incorrectly MORE than twice (> 2 times)
+  const weakSpotQuestions = React.useMemo(() => {
+    return allQuestions.filter((q) => (incorrectCountByQuestionId[q.id] || 0) > 2);
+  }, [allQuestions, incorrectCountByQuestionId]);
+
+  // Focus Weak Spots Handler
+  const handleFocusWeakSpots = () => {
+    if (weakSpotQuestions.length === 0) {
+      setWeakSpotsNotice(
+        "No questions have been answered incorrectly more than twice yet! As you practice, any questions you miss 3 or more times will automatically queue here for focused weak spot drills."
+      );
+      return;
+    }
+
+    setIsWeakSpotsMode(true);
+    setWeakSpotsNotice(null);
+    const firstWeak = weakSpotQuestions[0];
+    const subj = ALL_SUBJECTS.find((s) => s.id === firstWeak.subjectId);
+    if (subj) setSelectedSubject(subj);
+    setActiveQuestion(firstWeak);
+    setSelectedOptionId(null);
+    setShowFeedback(false);
+    setDrillIndex(1);
+  };
+
+  const handleExitWeakSpots = () => {
+    setIsWeakSpotsMode(false);
+    setWeakSpotsNotice(null);
+    handleStartPractice();
+  };
+
   // Exam Mode State
   const [completedExamSession, setCompletedExamSession] = useState<ExamSession | null>(null);
 
@@ -209,6 +266,8 @@ export default function App() {
 
   // Start practice with selected subject & chapters
   const handleStartPractice = () => {
+    setIsWeakSpotsMode(false);
+    setWeakSpotsNotice(null);
     const pool = allQuestions.filter(
       (q) => q.subjectId === selectedSubject.id && selectedChapters.includes(q.chapter)
     );
@@ -287,6 +346,25 @@ export default function App() {
   const handleNextDrillQuestion = async () => {
     setSelectedOptionId(null);
     setShowFeedback(false);
+
+    // If in Weak Spots Mode, rotate through weak spot questions
+    if (isWeakSpotsMode) {
+      const pool = weakSpotQuestions;
+      if (pool.length > 0) {
+        const remaining = pool.filter((q) => q.id !== activeQuestion?.id);
+        const nextQ = remaining.length > 0
+          ? remaining[Math.floor(Math.random() * remaining.length)]
+          : pool[0];
+        const subj = ALL_SUBJECTS.find((s) => s.id === nextQ.subjectId);
+        if (subj) setSelectedSubject(subj);
+        setActiveQuestion(nextQ);
+        setDrillIndex((prev) => prev + 1);
+        return;
+      } else {
+        // All weak spots mastered or empty
+        setIsWeakSpotsMode(false);
+      }
+    }
 
     // Filter available pool
     const pool = allQuestions.filter(
@@ -390,7 +468,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-[#F8F7F4] text-[#1B1B19] flex flex-col font-['Inter'] antialiased selection:bg-[#E15B44] selection:text-white">
       {/* Top Application Header */}
       <Header
         activeTab={activeTab}
@@ -405,7 +483,7 @@ export default function App() {
       />
 
       {/* Main Workspace Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-[#F8F7F4]">
         {/* TAB 1: Study & Drill Mode */}
         {activeTab === 'drill' && (
           <div className="space-y-6">
@@ -420,7 +498,63 @@ export default function App() {
               isUnlimitedMode={isUnlimitedMode}
               onToggleUnlimitedMode={setIsUnlimitedMode}
               onStartPractice={handleStartPractice}
+              weakSpotsCount={weakSpotQuestions.length}
+              isWeakSpotsMode={isWeakSpotsMode}
+              onFocusWeakSpots={handleFocusWeakSpots}
             />
+
+            {/* Informational Notification if no questions missed >2x yet */}
+            {weakSpotsNotice && (
+              <div className="p-4 border border-[rgba(27,27,25,0.2)] bg-white text-[#1B1B19] flex items-start justify-between gap-3 shadow-2xs animate-fade-in">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-[#E15B44] shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-['Space_Mono'] font-bold text-xs uppercase tracking-wider text-[#1B1B19]">Target Weak Spots Notice</h4>
+                    <p className="text-xs text-[#1B1B19]/70 mt-1 leading-relaxed">
+                      {weakSpotsNotice}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWeakSpotsNotice(null)}
+                  className="p-1 border border-[rgba(27,27,25,0.2)] text-[#1B1B19] hover:bg-[#EFECE6] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Active Targeted Weak Spots Mode Banner */}
+            {isWeakSpotsMode && (
+              <div className="p-4 sm:p-5 border-2 border-[#E15B44] bg-white text-[#1B1B19] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-fade-in">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="w-9 h-9 border border-[#E15B44] bg-rose-50 flex items-center justify-center text-[#E15B44] shrink-0">
+                    <Target className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-['Space_Mono'] font-bold text-xs sm:text-sm uppercase tracking-wider text-[#1B1B19]">
+                        Focus Weak Spots Mode Active
+                      </h3>
+                      <span className="font-['Space_Mono'] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-[#E15B44] text-white">
+                        {weakSpotQuestions.length} Question{weakSpotQuestions.length > 1 ? 's' : ''} Missed &gt; 2x
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#1B1B19]/70 mt-0.5">
+                      Targeting recurring mistakes from your study history. Master repeat errors to lock in your 80% passing benchmark!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExitWeakSpots}
+                  className="font-['Space_Mono'] px-3.5 py-2 bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs uppercase tracking-wider font-bold shrink-0 transition-colors cursor-pointer"
+                >
+                  Exit Weak Spots
+                </button>
+              </div>
+            )}
 
             {/* Active Quiz Card */}
             {activeQuestion ? (
@@ -432,11 +566,23 @@ export default function App() {
                 showFeedback={showFeedback}
                 onNext={handleNextDrillQuestion}
                 onOpenExplain={() => setExplainQuestion(activeQuestion)}
+                onOpenMnemonic={() => {
+                  if (activeQuestion) {
+                    setMnemonicModalData({
+                      concept: activeQuestion.explanation.coreConcept || activeQuestion.question,
+                      subjectName: selectedSubject.name,
+                      subjectId: selectedSubject.id,
+                      chapter: activeQuestion.chapter,
+                    });
+                  }
+                }}
                 isUnlimitedMode={isUnlimitedMode}
                 questionNumber={drillIndex || 1}
+                incorrectCountInHistory={activeQuestion ? (incorrectCountByQuestionId[activeQuestion.id] || 0) : 0}
+                isWeakSpotsMode={isWeakSpotsMode}
               />
             ) : (
-              <div className="p-8 text-center text-slate-400 bg-slate-900 border border-slate-800 rounded-2xl">
+              <div className="p-8 text-center text-[#1B1B19]/60 bg-white border border-[rgba(27,27,25,0.12)]">
                 Please select chapters from the panel above to begin studying.
               </div>
             )}
@@ -522,6 +668,29 @@ export default function App() {
         }
         onClipToNotes={handleClipToNotes}
         onSaveMnemonic={handleSaveMnemonic}
+        onOpenMnemonicStudio={(concept) => {
+          if (explainQuestion) {
+            const subj = ALL_SUBJECTS.find((s) => s.id === explainQuestion.subjectId);
+            setMnemonicModalData({
+              concept: concept || explainQuestion.explanation.coreConcept,
+              subjectName: subj?.name || 'College Core',
+              subjectId: explainQuestion.subjectId,
+              chapter: explainQuestion.chapter,
+            });
+          }
+        }}
+      />
+
+      {/* Collegiate Mnemonic Generator Studio Modal */}
+      <MnemonicGeneratorModal
+        isOpen={!!mnemonicModalData}
+        onClose={() => setMnemonicModalData(null)}
+        defaultConcept={mnemonicModalData?.concept || ''}
+        defaultSubjectName={mnemonicModalData?.subjectName || selectedSubject.name}
+        defaultSubjectId={mnemonicModalData?.subjectId || selectedSubject.id}
+        defaultChapter={mnemonicModalData?.chapter || selectedSubject.chapters[0]}
+        onSaveMnemonic={handleSaveMnemonic}
+        onClipToNotes={handleClipToNotes}
       />
 
       {/* 3-Device Sync & Student Sign-in Modal */}
@@ -547,6 +716,12 @@ export default function App() {
           syncUserData(guest);
         }}
       />
+
+      {/* Footer matching Variation 1 */}
+      <footer className="px-4 sm:px-8 py-5 border-t border-[rgba(27,27,25,0.12)] font-['Space_Mono'] text-[10px] sm:text-[11px] uppercase tracking-wider text-[#1B1B19]/60 flex flex-col sm:flex-row items-center justify-between gap-3 mt-auto bg-[#F8F7F4]">
+        <span>Grounded in OpenStax Textbooks · 80% Benchmark Standard</span>
+        <span>© 2024 CLEP Scholar Engine · All Rights Reserved</span>
+      </footer>
     </div>
   );
 }

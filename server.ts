@@ -59,10 +59,11 @@ function writeDb(db: Database) {
 }
 
 // Server-side Gemini AI Client
-const apiKey = process.env.GEMINI_API_KEY || '';
-const ai = apiKey
+const rawApiKey = process.env.GEMINI_API_KEY || '';
+const isValidKey = rawApiKey && rawApiKey !== 'MY_GEMINI_API_KEY' && !rawApiKey.includes('MY_');
+const ai = isValidKey
   ? new GoogleGenAI({
-      apiKey,
+      apiKey: rawApiKey,
       httpOptions: {
         headers: {
           'User-Agent': 'aistudio-build',
@@ -263,35 +264,100 @@ Return strictly valid JSON matching this schema:
   }
 });
 
-// Dynamic Mnemonic Generator
+function generateSmartMnemonic(concept: string, subjectName: string, chapter: string, style: string) {
+  const clean = (concept || 'Core Concept')
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w: string) => w.length > 2);
+
+  const keywords = clean.length > 0 ? clean.slice(0, 5) : ['Core', 'Fact', 'Knowledge'];
+  const acronym = keywords.map((k: string) => k[0].toUpperCase()).join('') || 'KEY';
+
+  if (style === 'acrostic') {
+    const acrosticWords = ['Please', 'Make', 'All', 'Tests', 'Count', 'Carefully'];
+    return {
+      phrase: keywords.map((k: string, i: number) => acrosticWords[i] || k).join(' '),
+      style: 'acrostic',
+      breakdown: keywords.map((k: string, i: number) => `${acrosticWords[i] || k[0].toUpperCase()} → ${k}`),
+      explanation: 'Each word in the sentence triggers the corresponding concept term in sequential order.',
+      retrievalCue: 'Run through the sentence in your mind to retrieve the list of facts.',
+      recallQuestion: 'What sequence of concepts does this acrostic phrase represent?',
+      recallAnswer: keywords.join(' → '),
+    };
+  } else if (style === 'rhyme') {
+    return {
+      phrase: `Remember ${keywords[0] || 'the rule'} to keep it clear, when testing day is drawing near!`,
+      style: 'rhyme',
+      breakdown: keywords.map((k: string) => `Key concept: ${k}`),
+      explanation: 'Rhyme and auditory cadence lock the definition in acoustic memory for fast recall.',
+      retrievalCue: 'Recite the rhyme mentally when you encounter this question topic.',
+      recallQuestion: 'Which key principle does this rhyme remind you of?',
+      recallAnswer: concept,
+    };
+  } else if (style === 'visual_hook') {
+    return {
+      phrase: `Picture ${keywords[0] || 'the concept'} interacting directly with ${keywords[1] || 'the principle'} under a bright spotlight!`,
+      style: 'visual_hook',
+      breakdown: keywords.map((k: string) => `Visual anchor: ${k}`),
+      explanation: 'Vivid spatial visualization activates episodic memory pathways in the brain.',
+      retrievalCue: 'Visualize the mental scene when you see this question keyword.',
+      recallQuestion: 'What is the primary visual anchor in this scene?',
+      recallAnswer: keywords[0] || 'Core subject',
+    };
+  } else {
+    return {
+      phrase: `${acronym} ("${keywords.map((k: string) => k.toUpperCase()).join(' - ')}")`,
+      style: 'acronym',
+      breakdown: keywords.map((k: string) => `${k[0].toUpperCase()} stands for: ${k}`),
+      explanation: `Anchor each critical keyword in sequential order: ${keywords.join(' → ')}.`,
+      retrievalCue: `Recall "${acronym}" when this question appears on the exam.`,
+      recallQuestion: `What does the first letter "${keywords[0]?.[0]?.toUpperCase() || 'K'}" stand for?`,
+      recallAnswer: keywords[0] || 'Key Term',
+    };
+  }
+}
+
+// Dynamic Collegiate Mnemonic Generator
 app.post('/api/ai/mnemonic', async (req: Request, res: Response) => {
-  const { concept, subjectName, chapter } = req.body;
+  const { concept, subjectName, chapter, style = 'acronym' } = req.body;
 
   if (!ai) {
     res.json({
-      mnemonic: {
-        phrase: 'CORE FACT KEY',
-        acronymBreakdown: ['C - Concept', 'F - Fact', 'K - Knowledge'],
-        explanation: 'Review the textbook definitions for this chapter.',
-      },
+      mnemonic: generateSmartMnemonic(concept, subjectName, chapter, style),
     });
     return;
   }
 
   try {
-    const prompt = `Create an ingenious, highly memorable collegiate mnemonic (acronym, witty phrase, or rhyming association) to help a student memorize this academic concept for their CLEP university exam:
-Subject: ${subjectName}
-Chapter: ${chapter}
-Concept: ${concept}
+    const styleInstructions: Record<string, string> = {
+      acronym: 'Create a punchy ACRONYM where each letter stands for a key step, component, or fact (like HOMES, OIL RIG, or PEMDAS).',
+      acrostic: 'Create an ACROSTIC SENTENCE where the first letter of each word corresponds to the facts in sequential order (like "King Philip Came Over For Good Soup").',
+      rhyme: 'Create a catchy 2-line RHYMING COUPLET or jingle that locks the rule or equation in auditory memory.',
+      visual_hook: 'Create a bizarre, vivid VISUAL MENTAL SCENE connecting the concepts in an unforgettable image.'
+    };
 
-Respond with pure JSON:
+    const instruction = styleInstructions[style] || styleInstructions.acronym;
+
+    const prompt = `You are a memory coach and university professor creating a memorable collegiate mnemonic for students studying difficult academic concepts for CLEP college test-outs.
+Subject: ${subjectName || 'College Core'}
+Chapter: ${chapter || 'General'}
+Concept/Fact to memorize: "${concept}"
+
+Format requirement:
+${instruction}
+
+Respond with strictly valid JSON:
 {
-  "phrase": "THE MEMORABLE PHRASE OR ACRONYM",
+  "phrase": "THE MEMORABLE MNEMONIC PHRASE OR ACRONYM",
+  "style": "${style}",
   "breakdown": [
-    "Letter/Word 1: meaning",
-    "Letter/Word 2: meaning"
+    "Item 1: detailed meaning and link to concept",
+    "Item 2: detailed meaning and link to concept"
   ],
-  "explanation": "Brief 1-sentence tip on how to trigger this memory during the exam."
+  "explanation": "Why this specific memory hook works and how to mentally trigger it under exam pressure.",
+  "retrievalCue": "Quick 1-sentence mental trigger to retrieve this during a timed exam.",
+  "recallQuestion": "A quick self-test question to test whether the student remembered the mnemonic.",
+  "recallAnswer": "The answer to the self-test question."
 }`;
 
     const response = await ai.models.generateContent({
@@ -305,8 +371,10 @@ Respond with pure JSON:
     const parsed = JSON.parse(response.text || '{}');
     res.json({ mnemonic: parsed });
   } catch (err: any) {
-    console.error('Error generating mnemonic:', err);
-    res.status(500).json({ error: 'Failed to generate mnemonic' });
+    console.warn('AI generation unavailable, using smart collegiate fallback:', err?.message);
+    res.json({
+      mnemonic: generateSmartMnemonic(concept, subjectName, chapter, style),
+    });
   }
 });
 

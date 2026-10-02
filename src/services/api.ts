@@ -94,16 +94,27 @@ export async function fetchAIQuestions(
   return [];
 }
 
+export interface GeneratedMnemonic {
+  phrase: string;
+  style?: 'acronym' | 'acrostic' | 'rhyme' | 'visual_hook';
+  breakdown: string[];
+  explanation: string;
+  retrievalCue?: string;
+  recallQuestion?: string;
+  recallAnswer?: string;
+}
+
 export async function generateAIMnemonic(
   concept: string,
   subjectName: string,
-  chapter: string
-): Promise<{ phrase: string; breakdown: string[]; explanation: string } | null> {
+  chapter: string,
+  style: 'acronym' | 'acrostic' | 'rhyme' | 'visual_hook' = 'acronym'
+): Promise<GeneratedMnemonic | null> {
   try {
     const res = await fetch('/api/ai/mnemonic', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ concept, subjectName, chapter }),
+      body: JSON.stringify({ concept, subjectName, chapter, style }),
     });
     if (res.ok) {
       const data = await res.json();

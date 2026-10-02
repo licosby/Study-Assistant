@@ -10,7 +10,6 @@ import {
   Play,
   RotateCcw,
   Sparkles,
-  HelpCircle,
   BookOpen
 } from 'lucide-react';
 import { Question, ExamSession, ExamConfig } from '../types';
@@ -49,40 +48,28 @@ export const ExamMode: React.FC<ExamModeProps> = ({
           completeExam(prev);
           return { ...prev, timeRemainingSeconds: 0, isCompleted: true };
         }
-        return {
-          ...prev,
-          timeRemainingSeconds: prev.timeRemainingSeconds - 1,
-        };
+        return { ...prev, timeRemainingSeconds: prev.timeRemainingSeconds - 1 };
       });
     }, 1000);
 
     return () => clearInterval(timer);
   }, [activeSession?.isCompleted]);
 
+  // Start exam session
   const handleStartExam = () => {
-    // Filter questions matching selected subjects
-    const pool = allQuestions.filter((q) =>
+    const eligiblePool = allQuestions.filter((q) =>
       examConfig.selectedSubjectIds.includes(q.subjectId)
     );
 
-    // Shuffle pool and slice or repeat to match total questions requested (e.g. 200 questions)
-    let selected: Question[] = [];
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const pool = eligiblePool.length > 0 ? eligiblePool : allQuestions;
 
-    if (shuffled.length >= examConfig.totalQuestions) {
-      selected = shuffled.slice(0, examConfig.totalQuestions);
-    } else {
-      // Repeat questions with unique IDs if requested question count is higher
-      selected = [...shuffled];
-      let counter = 1;
-      while (selected.length < examConfig.totalQuestions && shuffled.length > 0) {
-        for (const q of shuffled) {
-          if (selected.length >= examConfig.totalQuestions) break;
-          selected.push({
-            ...q,
-            id: `${q.id}-dup-${counter++}`,
-          });
-        }
+    // Shuffle and pick desired count
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const selectedQuestions: Question[] = [];
+    while (selectedQuestions.length < examConfig.totalQuestions) {
+      for (const q of shuffled) {
+        if (selectedQuestions.length >= examConfig.totalQuestions) break;
+        selectedQuestions.push(q);
       }
     }
 
@@ -91,7 +78,7 @@ export const ExamMode: React.FC<ExamModeProps> = ({
       startTime: Date.now(),
       timeLimitSeconds: examConfig.timeLimitMinutes * 60,
       timeRemainingSeconds: examConfig.timeLimitMinutes * 60,
-      questions: selected,
+      questions: selectedQuestions,
       userAnswers: {},
       flaggedQuestionIds: [],
       isCompleted: false,
@@ -102,111 +89,114 @@ export const ExamMode: React.FC<ExamModeProps> = ({
   };
 
   const handleSelectAnswer = (optionId: string) => {
-    if (!activeSession) return;
-    const qId = activeSession.questions[currentIdx].id;
-    setActiveSession({
-      ...activeSession,
-      userAnswers: {
-        ...activeSession.userAnswers,
-        [qId]: optionId,
-      },
+    if (!activeSession || activeSession.isCompleted) return;
+    const currentQ = activeSession.questions[currentIdx];
+    setActiveSession((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        userAnswers: {
+          ...prev.userAnswers,
+          [currentQ.id]: optionId,
+        },
+      };
     });
   };
 
-  const handleToggleFlag = (qId: string) => {
+  const handleToggleFlag = (questionId: string) => {
     if (!activeSession) return;
-    const isFlagged = activeSession.flaggedQuestionIds.includes(qId);
-    setActiveSession({
-      ...activeSession,
-      flaggedQuestionIds: isFlagged
-        ? activeSession.flaggedQuestionIds.filter((id) => id !== qId)
-        : [...activeSession.flaggedQuestionIds, qId],
+    setActiveSession((prev) => {
+      if (!prev) return null;
+      const isFlagged = prev.flaggedQuestionIds.includes(questionId);
+      return {
+        ...prev,
+        flaggedQuestionIds: isFlagged
+          ? prev.flaggedQuestionIds.filter((id) => id !== questionId)
+          : [...prev.flaggedQuestionIds, questionId],
+      };
     });
   };
 
-  const completeExam = (sessionToComplete = activeSession) => {
-    if (!sessionToComplete) return;
+  const completeExam = (sessionToComplete?: ExamSession) => {
+    const session = sessionToComplete || activeSession;
+    if (!session) return;
 
     let correctCount = 0;
     const subjectBreakdown: Record<string, { total: number; correct: number }> = {};
 
-    sessionToComplete.questions.forEach((q) => {
-      const userAnswer = sessionToComplete.userAnswers[q.id];
-      const isRight = userAnswer === q.correctOptionId;
+    session.questions.forEach((q) => {
+      const userAns = session.userAnswers[q.id];
+      const isRight = userAns === q.correctOptionId;
       if (isRight) correctCount++;
 
       if (!subjectBreakdown[q.subjectId]) {
         subjectBreakdown[q.subjectId] = { total: 0, correct: 0 };
       }
-      subjectBreakdown[q.subjectId].total++;
-      if (isRight) subjectBreakdown[q.subjectId].correct++;
+      subjectBreakdown[q.subjectId].total += 1;
+      if (isRight) {
+        subjectBreakdown[q.subjectId].correct += 1;
+      }
     });
 
-    const total = sessionToComplete.questions.length;
-    const percentage = Math.round((correctCount / total) * 100);
-    // User requested: "The 'likely passing' note is my estimate, set at 80% correct."
-    const likelyPassing = percentage >= 80;
+    const percentage = Math.round((correctCount / session.questions.length) * 100);
+    const isPassing = percentage >= 80;
 
     const completedSession: ExamSession = {
-      ...sessionToComplete,
+      ...session,
       isCompleted: true,
       score: {
-        total,
+        total: session.questions.length,
         correct: correctCount,
         percentage,
-        likelyPassing,
+        likelyPassing: isPassing,
         subjectBreakdown,
       },
     };
 
-    setActiveSession(null);
+    setActiveSession(completedSession);
+    setShowSubmitConfirm(false);
     onFinishExam(completedSession);
   };
 
-  // Format time remaining
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // If not started, show Exam Configuration Setup
+  // Setup / Launcher Screen
   if (!activeSession) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <Timer className="w-6 h-6" />
-            </div>
+      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in text-[#1B1B19] font-['Inter']">
+        <div className="bg-white border border-[rgba(27,27,25,0.15)] p-6 sm:p-10 shadow-sm">
+          <div className="flex items-start justify-between pb-5 mb-6 border-b border-[rgba(27,27,25,0.1)] gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white">
-                Official CLEP University Mock Examination
+              <div className="font-['Space_Mono'] text-[10px] uppercase tracking-[0.15em] text-[#E15B44] font-bold">
+                Standardized Evaluation
+              </div>
+              <h2 className="font-['Space_Mono'] text-xl sm:text-2xl font-bold uppercase tracking-tight text-[#1B1B19] flex items-center gap-2 mt-1">
+                <Timer className="w-6 h-6 text-[#E15B44]" />
+                <span>CLEP Timed Mock Examination Engine</span>
               </h2>
-              <p className="text-xs text-slate-400">
-                Standard timed testing simulation modeled after official College Board CLEP test-out guidelines.
+              <p className="text-xs sm:text-sm text-[#1B1B19]/70 mt-1">
+                Simulate official testing conditions. Questions are randomized across chosen OpenStax curricula with a rigorous <strong>80% passing benchmark</strong>.
               </p>
             </div>
-          </div>
 
-          {/* Benchmark Warning Callout */}
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 mb-6 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-slate-300">
-              <strong className="text-amber-300 font-semibold block mb-0.5">
-                Target Passing Score Benchmark: 80% Correct
-              </strong>
-              <span>
-                CLEP test-out credit requires high accuracy. Our diagnostic algorithm benchmarks
-                <strong> 80% or higher</strong> as "Likely Passing" for full college course credit.
+            <div className="hidden sm:block text-right">
+              <span className="font-['Space_Mono'] text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 border border-emerald-300 block">
+                Benchmark: ≥80% Passing
               </span>
             </div>
           </div>
 
-          {/* Preset Selection Buttons */}
+          {/* Preset Formats */}
           <div className="mb-6">
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <label className="block font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19] font-bold mb-2">
               Select Exam Format Preset:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -220,20 +210,24 @@ export const ExamMode: React.FC<ExamModeProps> = ({
                     timeLimitMinutes: 120,
                   })
                 }
-                className={`p-4 rounded-xl border text-left transition-all ${
+                className={`p-4 border text-left transition-all cursor-pointer ${
                   examConfig.totalQuestions === 200
-                    ? 'bg-indigo-950/50 border-indigo-500 ring-1 ring-indigo-500 shadow-md'
-                    : 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800'
+                    ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                    : 'bg-white border-[rgba(27,27,25,0.15)] hover:bg-[#EFECE6] text-[#1B1B19]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-indigo-400">Standard Marathon</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                  <span className={`font-['Space_Mono'] text-[10px] uppercase font-bold ${examConfig.totalQuestions === 200 ? 'text-[#E15B44]' : 'text-[#1B1B19]/60'}`}>
+                    Marathon Mode
+                  </span>
+                  <span className={`font-['Space_Mono'] text-[9px] uppercase px-1.5 py-0.2 border ${examConfig.totalQuestions === 200 ? 'border-white/30 text-white' : 'border-[#1B1B19]/20'}`}>
                     CLEP Full
                   </span>
                 </div>
-                <div className="text-lg font-bold text-white mb-0.5">200 Questions</div>
-                <div className="text-xs text-slate-400">2 Hour Time Limit (120 min)</div>
+                <div className="font-['Space_Mono'] text-lg font-bold mb-0.5">200 Questions</div>
+                <div className={`text-xs ${examConfig.totalQuestions === 200 ? 'text-slate-300' : 'text-[#1B1B19]/60'}`}>
+                  2 Hour Limit (120 min)
+                </div>
               </button>
 
               <button
@@ -246,20 +240,24 @@ export const ExamMode: React.FC<ExamModeProps> = ({
                     timeLimitMinutes: 90,
                   })
                 }
-                className={`p-4 rounded-xl border text-left transition-all ${
+                className={`p-4 border text-left transition-all cursor-pointer ${
                   examConfig.totalQuestions === 90
-                    ? 'bg-indigo-950/50 border-indigo-500 ring-1 ring-indigo-500 shadow-md'
-                    : 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800'
+                    ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                    : 'bg-white border-[rgba(27,27,25,0.15)] hover:bg-[#EFECE6] text-[#1B1B19]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-indigo-400">Subject CLEP</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-700 text-slate-300">
+                  <span className={`font-['Space_Mono'] text-[10px] uppercase font-bold ${examConfig.totalQuestions === 90 ? 'text-[#E15B44]' : 'text-[#1B1B19]/60'}`}>
+                    Standard Exam
+                  </span>
+                  <span className={`font-['Space_Mono'] text-[9px] uppercase px-1.5 py-0.2 border ${examConfig.totalQuestions === 90 ? 'border-white/30 text-white' : 'border-[#1B1B19]/20'}`}>
                     Medium
                   </span>
                 </div>
-                <div className="text-lg font-bold text-white mb-0.5">90 Questions</div>
-                <div className="text-xs text-slate-400">90 Minute Time Limit</div>
+                <div className="font-['Space_Mono'] text-lg font-bold mb-0.5">90 Questions</div>
+                <div className={`text-xs ${examConfig.totalQuestions === 90 ? 'text-slate-300' : 'text-[#1B1B19]/60'}`}>
+                  90 Minute Limit
+                </div>
               </button>
 
               <button
@@ -272,31 +270,36 @@ export const ExamMode: React.FC<ExamModeProps> = ({
                     timeLimitMinutes: 25,
                   })
                 }
-                className={`p-4 rounded-xl border text-left transition-all ${
+                className={`p-4 border text-left transition-all cursor-pointer ${
                   examConfig.totalQuestions === 25
-                    ? 'bg-indigo-950/50 border-indigo-500 ring-1 ring-indigo-500 shadow-md'
-                    : 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800'
+                    ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                    : 'bg-white border-[rgba(27,27,25,0.15)] hover:bg-[#EFECE6] text-[#1B1B19]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-indigo-400">Quick Diagnostic</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-700 text-slate-300">
-                    Speed
+                  <span className={`font-['Space_Mono'] text-[10px] uppercase font-bold ${examConfig.totalQuestions === 25 ? 'text-[#E15B44]' : 'text-[#1B1B19]/60'}`}>
+                    Sprint Diagnostic
+                  </span>
+                  <span className={`font-['Space_Mono'] text-[9px] uppercase px-1.5 py-0.2 border ${examConfig.totalQuestions === 25 ? 'border-white/30 text-white' : 'border-[#1B1B19]/20'}`}>
+                    Fast Check
                   </span>
                 </div>
-                <div className="text-lg font-bold text-white mb-0.5">25 Questions</div>
-                <div className="text-xs text-slate-400">25 Minute Sprint</div>
+                <div className="font-['Space_Mono'] text-lg font-bold mb-0.5">25 Questions</div>
+                <div className={`text-xs ${examConfig.totalQuestions === 25 ? 'text-slate-300' : 'text-[#1B1B19]/60'}`}>
+                  25 Minute Sprint
+                </div>
               </button>
             </div>
           </div>
 
-          {/* Subject Filter for Exam */}
+          {/* Subject Filter */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Subjects Tested in this Mock Exam ({examConfig.selectedSubjectIds.length}/{ALL_SUBJECTS.length}):
+              <label className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19] font-bold">
+                Subjects Tested ({examConfig.selectedSubjectIds.length}/{ALL_SUBJECTS.length}):
               </label>
               <button
+                type="button"
                 onClick={() =>
                   setExamConfig({
                     ...examConfig,
@@ -306,34 +309,39 @@ export const ExamMode: React.FC<ExamModeProps> = ({
                         : ALL_SUBJECTS.map((s) => s.id),
                   })
                 }
-                className="text-xs text-indigo-400 hover:underline"
+                className="font-['Space_Mono'] text-[10px] uppercase text-[#1B1B19] underline hover:text-[#E15B44] cursor-pointer"
               >
-                {examConfig.selectedSubjectIds.length === ALL_SUBJECTS.length ? 'Clear to Single' : 'Select All 20'}
+                {examConfig.selectedSubjectIds.length === ALL_SUBJECTS.length
+                  ? 'Deselect All'
+                  : 'Select All Subjects'}
               </button>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 bg-slate-950/60 rounded-xl border border-slate-800">
-              {ALL_SUBJECTS.map((s) => {
-                const isChecked = examConfig.selectedSubjectIds.includes(s.id);
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {ALL_SUBJECTS.map((sub) => {
+                const isChecked = examConfig.selectedSubjectIds.includes(sub.id);
                 return (
-                  <button
-                    key={s.id}
+                  <div
+                    key={sub.id}
                     onClick={() => {
-                      const exists = examConfig.selectedSubjectIds.includes(s.id);
-                      const updated = exists
-                        ? examConfig.selectedSubjectIds.filter((id) => id !== s.id)
-                        : [...examConfig.selectedSubjectIds, s.id];
+                      const updated = isChecked
+                        ? examConfig.selectedSubjectIds.filter((id) => id !== sub.id)
+                        : [...examConfig.selectedSubjectIds, sub.id];
                       if (updated.length > 0) {
                         setExamConfig({ ...examConfig, selectedSubjectIds: updated });
                       }
                     }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`p-3 border text-xs cursor-pointer transition-colors flex items-center justify-between ${
                       isChecked
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-white border-[#1B1B19] text-[#1B1B19] font-medium shadow-2xs'
+                        : 'bg-[#F8F7F4] border-[rgba(27,27,25,0.12)] text-[#1B1B19]/60 hover:bg-[#EFECE6]'
                     }`}
                   >
-                    {s.name}
-                  </button>
+                    <span className="truncate">{sub.name}</span>
+                    <span className="font-['Space_Mono'] text-[10px] text-[#E15B44] font-bold">
+                      {isChecked ? '✓' : ''}
+                    </span>
+                  </div>
                 );
               })}
             </div>
@@ -341,10 +349,11 @@ export const ExamMode: React.FC<ExamModeProps> = ({
 
           {/* Start Exam Button */}
           <button
+            type="button"
             onClick={handleStartExam}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:from-indigo-500 hover:to-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-4 font-['Space_Mono'] bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs sm:text-sm font-bold uppercase tracking-wider border border-[#1B1B19] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
           >
-            <Play className="w-5 h-5 fill-white" />
+            <Play className="w-4 h-4 fill-white" />
             <span>Begin Official CLEP Mock Exam ({examConfig.totalQuestions} Questions • {examConfig.timeLimitMinutes} Mins)</span>
           </button>
         </div>
@@ -357,28 +366,28 @@ export const ExamMode: React.FC<ExamModeProps> = ({
   const currentAnswer = activeSession.userAnswers[currentQ.id];
   const isFlagged = activeSession.flaggedQuestionIds.includes(currentQ.id);
   const answeredCount = Object.keys(activeSession.userAnswers).length;
-  const isLowTime = activeSession.timeRemainingSeconds < 300; // < 5 minutes
+  const isLowTime = activeSession.timeRemainingSeconds < 300;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 animate-fade-in">
+    <div className="max-w-5xl mx-auto space-y-5 animate-fade-in text-[#1B1B19] font-['Inter']">
       {/* Exam Header & Live Countdown Timer */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 sticky top-16 z-30 backdrop-blur-md">
+      <div className="bg-[#F8F7F4] border-2 border-[#1B1B19] p-4 flex flex-wrap items-center justify-between gap-4 sticky top-20 z-30 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="font-mono text-xs text-slate-400">
-            Question <strong className="text-white text-sm">{currentIdx + 1}</strong> of {activeSession.questions.length}
+          <div className="font-['Space_Mono'] text-xs uppercase tracking-wider text-[#1B1B19]/70">
+            Question <strong className="text-[#1B1B19] text-sm">{currentIdx + 1}</strong> of {activeSession.questions.length}
           </div>
-          <span className="text-slate-600">|</span>
-          <div className="text-xs text-slate-400">
-            Answered: <strong className="text-emerald-400">{answeredCount}</strong> / {activeSession.questions.length}
+          <span className="text-[#1B1B19]/30">|</span>
+          <div className="font-['Space_Mono'] text-xs uppercase tracking-wider text-[#1B1B19]/70">
+            Answered: <strong className="text-emerald-700">{answeredCount}</strong> / {activeSession.questions.length}
           </div>
         </div>
 
         {/* Big Live Countdown Timer */}
         <div
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-xl font-mono font-bold text-base border shadow-inner ${
+          className={`flex items-center gap-2 px-4 py-1.5 font-['Space_Mono'] font-bold text-base border ${
             isLowTime
-              ? 'bg-rose-950/80 border-rose-500 text-rose-300 animate-pulse'
-              : 'bg-slate-950 border-slate-700 text-amber-300'
+              ? 'bg-rose-50 border-[#E15B44] text-[#E15B44] animate-pulse'
+              : 'bg-white border-[#1B1B19] text-[#1B1B19]'
           }`}
         >
           <Timer className="w-4 h-4" />
@@ -388,20 +397,22 @@ export const ExamMode: React.FC<ExamModeProps> = ({
         {/* Action Controls */}
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => handleToggleFlag(currentQ.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+            className={`font-['Space_Mono'] flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-all cursor-pointer ${
               isFlagged
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                ? 'bg-amber-100 border-amber-600 text-amber-950 font-bold'
+                : 'bg-white border-[#1B1B19] text-[#1B1B19] hover:bg-[#EFECE6]'
             }`}
           >
-            <Flag className={`w-3.5 h-3.5 ${isFlagged ? 'fill-amber-400' : ''}`} />
-            <span>{isFlagged ? 'Flagged' : 'Flag Question'}</span>
+            <Flag className={`w-3.5 h-3.5 ${isFlagged ? 'fill-amber-600' : ''}`} />
+            <span>{isFlagged ? 'Flagged' : 'Flag'}</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setShowSubmitConfirm(true)}
-            className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all"
+            className="font-['Space_Mono'] px-4 py-1.5 bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs uppercase tracking-wider font-bold border border-[#1B1B19] transition-all cursor-pointer"
           >
             Submit Exam
           </button>
@@ -409,25 +420,25 @@ export const ExamMode: React.FC<ExamModeProps> = ({
       </div>
 
       {/* Main Exam Question Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
-        <div className="flex items-center justify-between gap-2 pb-3 mb-5 border-b border-slate-800">
+      <div className="bg-white border border-[rgba(27,27,25,0.15)] p-6 sm:p-10 shadow-sm relative">
+        <div className="flex items-center justify-between gap-2 pb-3 mb-5 border-b border-[rgba(27,27,25,0.1)]">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+            <span className="font-['Space_Mono'] text-[10px] uppercase tracking-[0.15em] text-[#E15B44] font-bold">
               {currentQ.chapter}
             </span>
           </div>
 
           <button
+            type="button"
             onClick={() => onOpenExplainForQuestion(currentQ)}
-            className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 hover:underline"
-            title="Open textbook breakdown"
+            className="font-['Space_Mono'] flex items-center gap-1.5 text-xs uppercase tracking-wider text-[#1B1B19] hover:text-[#E15B44] underline"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Explain This Concept</span>
+            <span>Explain Concept</span>
           </button>
         </div>
 
-        <h3 className="text-base sm:text-lg font-semibold text-white leading-relaxed mb-6">
+        <h3 className="text-xl sm:text-2xl font-semibold text-[#1B1B19] leading-snug mb-6 tracking-tight">
           {currentQ.question}
         </h3>
 
@@ -439,40 +450,48 @@ export const ExamMode: React.FC<ExamModeProps> = ({
               <div
                 key={opt.id}
                 onClick={() => handleSelectAnswer(opt.id)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-start gap-3.5 ${
+                className={`p-4 border cursor-pointer transition-all flex items-start gap-3.5 ${
                   isSelected
-                    ? 'bg-indigo-950/60 border-indigo-500 ring-1 ring-indigo-500 text-white'
-                    : 'bg-slate-800/40 border-slate-700/80 hover:bg-slate-800 hover:border-slate-600 text-slate-200'
+                    ? 'bg-[#EFECE6] border-[#1B1B19] text-[#1B1B19] font-medium'
+                    : 'bg-white border-[rgba(27,27,25,0.15)] hover:border-[#1B1B19] hover:bg-[#EFECE6] text-[#1B1B19]'
                 }`}
               >
                 <span
-                  className={`w-6 h-6 rounded-lg text-xs flex items-center justify-center shrink-0 uppercase font-bold ${
-                    isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300'
+                  className={`w-6 h-6 border flex items-center justify-center font-['Space_Mono'] text-xs font-bold shrink-0 uppercase ${
+                    isSelected ? 'border-[#1B1B19] bg-[#1B1B19] text-white' : 'border-[#1B1B19] bg-white text-[#1B1B19]'
                   }`}
                 >
                   {opt.id}
                 </span>
-                <span className="text-xs sm:text-sm leading-relaxed">{opt.text}</span>
+                <span className="text-sm sm:text-base leading-relaxed pt-0.2">
+                  {opt.text}
+                </span>
               </div>
             );
           })}
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+        {/* Stepper Navigation */}
+        <div className="flex items-center justify-between pt-5 border-t border-[rgba(27,27,25,0.1)]">
           <button
+            type="button"
             onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
             disabled={currentIdx === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="font-['Space_Mono'] flex items-center gap-1.5 px-4 py-2 border border-[#1B1B19] bg-white hover:bg-[#EFECE6] text-xs uppercase tracking-wider text-[#1B1B19] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Previous</span>
           </button>
 
+          <span className="font-['Space_Mono'] text-xs uppercase text-[#1B1B19]/60">
+            {currentIdx + 1} / {activeSession.questions.length}
+          </span>
+
           <button
+            type="button"
             onClick={() => setCurrentIdx((prev) => Math.min(activeSession.questions.length - 1, prev + 1))}
             disabled={currentIdx === activeSession.questions.length - 1}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all"
+            className="font-['Space_Mono'] flex items-center gap-1.5 px-4 py-2 border border-[#1B1B19] bg-[#1B1B19] hover:bg-[#E15B44] text-xs uppercase tracking-wider text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <span>Next</span>
             <ChevronRight className="w-4 h-4" />
@@ -480,41 +499,47 @@ export const ExamMode: React.FC<ExamModeProps> = ({
         </div>
       </div>
 
-      {/* Question Grid Navigator */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+      {/* Question Navigator Drawer */}
+      <div className="bg-white border border-[rgba(27,27,25,0.15)] p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3 text-xs">
-          <span className="font-semibold text-slate-300 uppercase tracking-wider">
-            Quick Question Matrix Navigator ({activeSession.questions.length} Questions)
+          <span className="font-['Space_Mono'] text-[10px] uppercase tracking-wider text-[#1B1B19] font-bold">
+            Question Navigator ({answeredCount}/{activeSession.questions.length} Answered)
           </span>
-          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+          <div className="flex items-center gap-3 text-[10px] font-['Space_Mono'] uppercase">
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Answered
+              <span className="w-2.5 h-2.5 bg-[#1B1B19] inline-block" /> Answered
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Flagged
+              <span className="w-2.5 h-2.5 bg-amber-400 inline-block" /> Flagged
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-700 inline-block" /> Unanswered
+              <span className="w-2.5 h-2.5 bg-[#F8F7F4] border border-[#1B1B19] inline-block" /> Unanswered
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-16 lg:grid-cols-20 gap-1.5 max-h-48 overflow-y-auto p-2 bg-slate-950 rounded-xl border border-slate-800">
+        <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
           {activeSession.questions.map((q, idx) => {
-            const hasAnswer = !!activeSession.userAnswers[q.id];
-            const flagged = activeSession.flaggedQuestionIds.includes(q.id);
-            const isCurrent = idx === currentIdx;
-
-            let bg = 'bg-slate-800 text-slate-400';
-            if (hasAnswer) bg = 'bg-emerald-600/80 text-white font-semibold';
-            if (flagged) bg = 'bg-amber-500 text-slate-950 font-bold';
-            if (isCurrent) bg += ' ring-2 ring-indigo-400';
+            const hasAnswered = !!activeSession.userAnswers[q.id];
+            const isFlag = activeSession.flaggedQuestionIds.includes(q.id);
+            const isCur = idx === currentIdx;
 
             return (
               <button
                 key={q.id}
+                type="button"
                 onClick={() => setCurrentIdx(idx)}
-                className={`h-7 rounded text-xs flex items-center justify-center transition-all ${bg}`}
+                className={`w-7 h-7 font-['Space_Mono'] text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center ${
+                  isCur
+                    ? 'ring-2 ring-[#E15B44] border-[#E15B44]'
+                    : ''
+                } ${
+                  isFlag
+                    ? 'bg-amber-100 border-amber-500 text-amber-950'
+                    : hasAnswered
+                    ? 'bg-[#1B1B19] text-white border-[#1B1B19]'
+                    : 'bg-[#F8F7F4] border-[rgba(27,27,25,0.2)] text-[#1B1B19] hover:bg-[#EFECE6]'
+                }`}
               >
                 {idx + 1}
               </button>
@@ -523,33 +548,36 @@ export const ExamMode: React.FC<ExamModeProps> = ({
         </div>
       </div>
 
-      {/* Confirmation Modal to Submit Exam */}
+      {/* Confirmation Modal */}
       {showSubmitConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-white shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">Ready to submit exam?</h3>
-            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-              You have answered <strong className="text-emerald-400">{answeredCount}</strong> of{' '}
-              <strong>{activeSession.questions.length}</strong> questions.
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white border-2 border-[#1B1B19] max-w-md w-full p-6 shadow-2xl text-[#1B1B19]">
+            <h3 className="font-['Space_Mono'] text-base font-bold uppercase tracking-tight text-[#1B1B19] mb-2 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-[#E15B44]" />
+              <span>Confirm Exam Submission</span>
+            </h3>
+            <p className="text-xs sm:text-sm text-[#1B1B19]/80 mb-4 leading-relaxed">
+              You have answered <strong>{answeredCount}</strong> of <strong>{activeSession.questions.length}</strong> questions.
               {answeredCount < activeSession.questions.length && (
-                <span className="text-amber-400 block mt-1">
+                <span className="block text-[#E15B44] font-semibold mt-1">
                   Warning: You have {activeSession.questions.length - answeredCount} unanswered questions remaining.
                 </span>
               )}
             </p>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setShowSubmitConfirm(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
+                className="font-['Space_Mono'] px-4 py-2 border border-[rgba(27,27,25,0.2)] text-xs uppercase hover:bg-[#EFECE6] cursor-pointer"
               >
-                Return to Exam
+                Keep Reviewing
               </button>
               <button
+                type="button"
                 onClick={() => completeExam()}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all"
+                className="font-['Space_Mono'] px-5 py-2 bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs uppercase font-bold border border-[#1B1B19] transition-all cursor-pointer"
               >
-                Confirm & View Results
+                Confirm & Grade
               </button>
             </div>
           </div>
