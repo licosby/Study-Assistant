@@ -30,6 +30,7 @@ import { MnemonicGeneratorModal } from './components/MnemonicGeneratorModal';
 import { AuthModal } from './components/AuthModal';
 import { AudioListeningLab } from './components/AudioListeningLab';
 import { DigitalCellDissectionLab, SpecimenId } from './components/DigitalCellDissectionLab';
+import { PerformanceDashboard } from './components/PerformanceDashboard';
 import { Target, AlertCircle, X } from 'lucide-react';
 
 // Initial preloaded collegiate mnemonics
@@ -122,7 +123,7 @@ const INITIAL_MNEMONICS: MnemonicItem[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'drill' | 'exam' | 'sciences' | 'audio' | 'history' | 'notes' | 'mnemonics'>('drill');
+  const [activeTab, setActiveTab] = useState<'drill' | 'exam' | 'dashboard' | 'sciences' | 'audio' | 'history' | 'notes' | 'mnemonics'>('drill');
   const [user, setUser] = useState<UserSessionData | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scienceModalSpecimen, setScienceModalSpecimen] = useState<SpecimenId | null>(null);
@@ -601,6 +602,7 @@ export default function App() {
                 session={completedExamSession}
                 onRetake={() => setCompletedExamSession(null)}
                 onOpenExplain={(q) => setExplainQuestion(q)}
+                onViewPerformanceDashboard={() => setActiveTab('dashboard')}
               />
             ) : (
               <ExamMode
@@ -612,17 +614,33 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: Digital Cells & Dissection Science Lab */}
+        {/* TAB 3: Academic Performance Dashboard (Recharts Visualizations) */}
+        {activeTab === 'dashboard' && (
+          <PerformanceDashboard
+            history={user?.history || []}
+            allQuestions={allQuestions}
+            onStartSubjectDrill={(subjectId) => {
+              const targetSubj = ALL_SUBJECTS.find((s) => s.id === subjectId);
+              if (targetSubj) {
+                handleSelectSubject(targetSubj);
+                setActiveTab('drill');
+              }
+            }}
+            onOpenMockExam={() => setActiveTab('exam')}
+          />
+        )}
+
+        {/* TAB 4: Digital Cells & Dissection Science Lab */}
         {activeTab === 'sciences' && (
           <DigitalCellDissectionLab />
         )}
 
-        {/* TAB 4: CLEP Foreign Language Audio Listening Lab */}
+        {/* TAB 5: CLEP Foreign Language Audio Listening Lab */}
         {activeTab === 'audio' && (
           <AudioListeningLab />
         )}
 
-        {/* TAB 5: Question History Tracker */}
+        {/* TAB 6: Question History Tracker */}
         {activeTab === 'history' && (
           <HistoryTracker
             history={user?.history || []}

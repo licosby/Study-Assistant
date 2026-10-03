@@ -15,12 +15,14 @@ interface ExamResultsProps {
   session: ExamSession;
   onRetake: () => void;
   onOpenExplain: (q: Question) => void;
+  onViewPerformanceDashboard?: () => void;
 }
 
 export const ExamResults: React.FC<ExamResultsProps> = ({
   session,
   onRetake,
   onOpenExplain,
+  onViewPerformanceDashboard,
 }) => {
   const [filter, setFilter] = useState<'all' | 'incorrect' | 'correct'>('all');
 
@@ -53,14 +55,27 @@ export const ExamResults: React.FC<ExamResultsProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onRetake}
-            className="font-['Space_Mono'] flex items-center gap-2 px-5 py-2.5 bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs uppercase tracking-wider font-bold border border-[#1B1B19] transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Retake Exam</span>
-          </button>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {onViewPerformanceDashboard && (
+              <button
+                type="button"
+                onClick={onViewPerformanceDashboard}
+                className="font-['Space_Mono'] flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-[#EFECE6] text-[#1B1B19] text-xs uppercase tracking-wider font-bold border border-[#1B1B19] transition-all cursor-pointer"
+              >
+                <BarChart3 className="w-4 h-4 text-[#E15B44]" />
+                <span>Score Trends (Charts)</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onRetake}
+              className="font-['Space_Mono'] flex items-center gap-2 px-5 py-2.5 bg-[#1B1B19] hover:bg-[#E15B44] text-white text-xs uppercase tracking-wider font-bold border border-[#1B1B19] transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Retake Exam</span>
+            </button>
+          </div>
         </div>
 
         {/* Primary Numbers & 80% Benchmark */}
